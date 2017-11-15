@@ -110,3 +110,8 @@ ul {
 .bar-other rect:hover {
 	fill: #666666;
 }
+.states {
+	fill: none;
+	stroke: #fff;
+	stroke-linejoin: round;
+}

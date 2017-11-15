@@ -16,6 +16,7 @@
 	<script src="vis.js"></script>
 	<script src="../Code_v2/data/data.js"></script>
 	<script src="https://d3js.org/topojson.v2.min.js"></script>
+	<script src="WenTest.js"></script>
 </head>
 <body>
 	<div id="header">
@@ -159,12 +160,14 @@
 					default:
 						subgroups.html('<fieldset><legend>Select Subgroup(s)</legend> <label for="white">White</label> <input id="white" name="white" type="checkbox"> <label for="black">Black</label> <input id="black" name="black" type="checkbox"> <label for="asian">Asian</label> <input id="asian" name="asian" type="checkbox"> <label for="hawaiian">Hawaiian</label> <input id="hawaiian" name="hawaiian" type="checkbox"> <label for="multirace">Multirace</label> <input id="multirace" name="multirace" type="checkbox"> <label for="other">Other</label> <input id="other" name="other" type="checkbox"></fieldset>');		
 						$("#subgroups input").checkboxradio();	
-				};
+				}
 			}
 		});
 
         /****** Initialization for SVGs ******/
-        //initVisComp();
+
+		//initialize geomap
+		initVisMap();
 
 
 		/****** Bind events ******/
