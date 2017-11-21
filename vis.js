@@ -77,6 +77,55 @@ function getCurYear() {
     return $("#year-slider").slider("option", "value");
 }
 
+//filter data
+//filter data by selected data
+function filterSelected(data, states) {
+    var filtered_data = data.filter(function(d) {
+        switch (states) {
+            case "rep": return d["2016_Votes"] == "Republican";
+            case "dem": return d["2016_Votes"] == "Democratic";
+            case "shifter": return d["Shift_Flag"] == "Shifter";
+            default: return true;
+        }
+    });
+    return filtered_data;
+}
+//filter data by other data
+function filterOthers(data, states) {
+    var other_data = data.filter(function(d) {
+        switch (states) {
+            case "rep": return d["2016_Votes"] != "Republican";
+            case "dem": return d["2016_Votes"] != "Democratic";
+            case "shifter": return d["Shift_Flag"] != "Shifter";
+            default: return false;
+        }
+    });
+    return other_data;
+}
+//switch tab for data of premium, premium increase, income ratio
+function datasetByTab(_current_tab, _years, _filtered_data, _other_data) {
+    var data_selected;
+    var data_other;
+    switch (_current_tab) {
+        case 0:
+            data_selected = getPremium(_filtered_data, _years);
+            data_other = getPremium(_other_data, _years);
+            break;
+        case 1:
+            data_selected = getPremiumIncrease(_filtered_data, _years);
+            data_other = getPremiumIncrease(_other_data, _years);
+            break;
+        case 2:
+            data_selected = getPremiumIncome(_filtered_data, _years);
+            data_other = getPremiumIncome(_other_data, _years);
+            break;
+        default:
+            data_selected = getPremium(_filtered_data, _years);
+            data_other = getPremium(_other_data, _years);
+    }
+    return {data_selected: data_selected, data_other: data_other};
+}
+
 //create svg for comparison panel
 var margin = {top: 40, right: 30, left: 30, bottom: 40};
 var svg_comp;
@@ -95,51 +144,21 @@ var compare = function (event, ui) {
     //remove svg
     $("#comp-svg").remove();
 
-    var data_selected = [];
-    var data_other = [];
-    var filtered_data = [];
-    var other_data = [];
     var full_data = event.data.dataset;
     var states = getSelectedStates();
     var current_tab = getSelectedTab();
     var year = getCurYear();
+    var filtered_data = filterSelected(full_data, states);
+    var other_data = filterOthers(full_data, states);
+    var dataset = datasetByTab(current_tab, [year], filtered_data, other_data);
+    var data_selected = dataset.data_selected;
+    var data_other = dataset.data_other;
 
-    filtered_data = full_data.filter(function(d) {
-        switch (states) {
-            case "rep": return d["2016_Votes"] == "Republican";
-            case "dem": return d["2016_Votes"] == "Democratic";
-            case "shifter": return d["Shift_Flag"] == "Shifter";
-            default: return true;
-        }
-    });
-
-    other_data = full_data.filter(function(d) {
-        switch (states) {
-            case "rep": return d["2016_Votes"] != "Republican";
-            case "dem": return d["2016_Votes"] != "Democratic";
-            case "shifter": return d["Shift_Flag"] != "Shifter";
-            default: return false;
-        }
-    });
-
-    switch (current_tab) {
-        case 0:
-            data_selected = getPremium(filtered_data, [year]);
-            data_other = getPremium(other_data, [year]);
-            break;
-        case 1:
-            data_selected = getPremiumIncrease(filtered_data, [year]);
-            data_other = getPremiumIncrease(other_data, [year]);
-            break;
-        case 2:
-            data_selected = getPremiumIncome(filtered_data, [year]);
-            data_other = getPremiumIncome(other_data, [year]);
-            break;
-        default:
-            data_selected = getPremium(filtered_data, [year]);
-            data_other = getPremium(other_data, [year]);
+    if (current_tab == 1 && year == 2016) {
+        $("#tab-comparison").html("<strong>We don't have 2017's data yet. You can select data from 2011 to 2015 to view the increase ratio.</strong>");
+        $("#comp-result").css("display", "none");
+        return;
     }
-
     var min_data = d3.min([d3.min(data_selected[0]),d3.min(data_other[0])]);
     var max_data = d3.max([d3.max(data_selected[0]),d3.max(data_other[0])]);
     var width_comp = $("#tab-comparison").width();
@@ -267,12 +286,12 @@ var compare = function (event, ui) {
 
     //show compare result
     if(data_other[0].length != 0) {
-        tTest(data_selected[0], data_other[0]);
+        tTest(current_tab, year, data_selected[0], data_other[0]);
     }
 };
 
 // t test
-function tTest(sample_1, sample_2) {
+function tTest(current_tab, year, sample_1, sample_2) {
     var p = ss.tTestTwoSample(sample_1, sample_2, 0);
     console.log("p:"+p);
     if(Math.abs(p) <= 0.05) {
@@ -292,3 +311,33 @@ function tTest(sample_1, sample_2) {
         }
     }
 }
+
+//trend panel
+var trend = function (event, ui) {
+    //initialization
+    var years = [];
+    var full_data = event.data.dataset;
+    var states = getSelectedStates();
+    var current_tab = getSelectedTab();
+    var vis_option = getSelectedVis();
+    var filtered_data = filterSelected(full_data, states);
+    var other_data = filterOthers(full_data, states);
+
+    //get dataset
+    if (current_tab == 1) {
+        years = [2011, 2012, 2013, 2014, 2015];
+    } else {
+        years = [2011, 2012, 2013, 2014, 2015, 2016];
+    }
+    var dataset = datasetByTab(current_tab, years, filtered_data, other_data);
+    var data_selected = dataset.data_selected;
+    var data_other = dataset.data_other;
+
+    console.log(data_selected);
+    console.log(data_other);
+
+    //calculate the average for line chart
+
+    //visualize the chart
+
+};
