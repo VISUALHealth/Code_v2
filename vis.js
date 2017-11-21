@@ -336,4 +336,8 @@ var trend = function (event, ui) {
     console.log(data_selected);
     console.log(data_other);
 
+    //calculate the average for line chart
+
+    //visualize the chart
+
 };
