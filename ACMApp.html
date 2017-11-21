@@ -168,11 +168,15 @@
 
 		//initialize geomap
 		initVisMap();
+		//initialize trend chart
+
+		//initialize box chart
 
 
 		/****** Bind events ******/
 		// tab
         $("#chart-tabs").on("tabsactivate", {dataset: full_data}, compare);
+        $("#chart-tabs").on("tabsactivate", {dataset: full_data}, trend);
 
         //control panel (for states)
         $("#state-set input").on("click", {dataset: full_data}, compare);
@@ -187,3 +191,4 @@
 	</script> 	
 </body>
 </html>
+       
