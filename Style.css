@@ -115,3 +115,6 @@ ul {
 	stroke: #fff;
 	stroke-linejoin: round;
 }
+.ui-tabs .ui-tabs-nav {
+	font-size: 0.9em;
+}
