@@ -23,29 +23,42 @@ function initVisMap() {
     //Rep red: #ca223c
     //Dem blue: #2a5783
     //grey: #f2f2f2
-    var fill = d3.scaleLinear()
-        .domain([7, 27804]) //based on real data retrieved, now it is the area of the state
-        .range(["#f6dcd5", "#9e3d22"]);
+    var fill = function(area){
+        var state_id = area.id;
+        var d = full_data;
+        d = d.filter(function(d) {return (d.id==area.id);});
+
+        if(d[0].Shift_Flag == "Democratic")
+            return "#2a5783";
+        if(d[0].Shift_Flag=="Republican")
+            return "#ca223c";
+        if(d[0].Shift_Flag=="Shifter")
+            return "yellow";
+
+    };
 
     svg_map = d3.select("#geo-map")
         .append("svg")
         .attr("width", width_map)
         .attr("height", height_map);
 
+
     d3.json("https://d3js.org/us-10m.v1.json", function(error, us) {
         if (error) throw error;
 
         var path = d3.geoPath().projection(scale(0.8, width_map, height_map));
 
-        svg_map.append("g")
+        var pathes = svg_map.append("g")
             .attr("class", "states")
             .selectAll("path")
-            .data(topojson.feature(us, us.objects.states).features)
-            .enter()
-                .append("path")
-                .attr("d", path)
-                .style("fill", function(d){return fill(path.area(d));});
+            .data(topojson.feature(us, us.objects.states).features);
 
+        pathes.enter()
+            .append("path")
+            .attr("d", path)
+            .style("fill", function(d){return fill(d)});
+
+        console.log(us.objects.states.id)
     });
 
 
