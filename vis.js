@@ -162,7 +162,7 @@ function zip(_data1, _data2, _data3) {
 }
 
 //create svg for comparison panel
-var margin = {top: 40, right: 30, left: 30, bottom: 40};
+var margin = {top: 40, right: 30, left: 40, bottom: 40};
 var svg_comp;
 //create svg for line chart panel
 var width_line, height_line;
@@ -447,6 +447,19 @@ var drawTrend = function(_full_data, _years, _states, _current_tab, _svg) {
     var trend_data = zip(_years, data_selected_avg, data_other_avg);
 
     var color = ["#56a0d3", "#cccccc"];
+    var tip_trend = d3.tip()
+        .attr("class", "d3-tip")
+        .offset([-10, 0])
+        .html(function(d) {
+            var f = d3.format(",.2%");
+            if(d.value < 1) {
+                return "<strong>Year: </strong>"+d.year+"<br><strong>Average: </strong>"+f(d.value);
+            } else {
+                return "<strong>Year: </strong>"+d.year+"<br><strong>Average: </strong>"+d.value.toFixed(2);
+            }
+        });
+    _svg.call(tip_trend);
+
     var x = d3.scaleLinear()
         .domain([2011, d3.max(_years)])
         .range([0, width_line - margin.left - margin.right]);
@@ -487,7 +500,23 @@ var drawTrend = function(_full_data, _years, _states, _current_tab, _svg) {
             .attr('transform', 'translate(' + margin.left + ',' + margin.top + ')')
             .attr('cx', function(d){ return x(d.year);})
             .attr('cy', function(d){ return y(d.value);})
-            .attr('fill', "#56a0d3");
+            .attr('fill', "#56a0d3")
+            .attr("fill-opacity", 0.8)
+            .on('mouseover', function(d, i){
+                d3.select(this)
+                    .transition(300)
+                    .attr("fill-opacity", 1)
+                    .attr('r', 8);
+                $("#year-slider").slider( "option", "value", d.year);
+                tip_trend.show(d, i);
+            })
+            .on('mouseout', function(d){
+                d3.select(this)
+                    .transition(300)
+                    .attr("fill-opacity", 0.8)
+                    .attr('r', 5);
+                tip_trend.hide(d);
+            });
 
     if(_states !== 'all-states') {
         var dots_others = _svg.selectAll('.dot_others').data(trend_data[1]);
@@ -501,6 +530,23 @@ var drawTrend = function(_full_data, _years, _states, _current_tab, _svg) {
                 .attr('transform', 'translate(' + margin.left + ',' + margin.top + ')')
                 .attr('cx', function(d){ return x(d.year);})
                 .attr('cy', function(d){ return y(d.value);})
-                .attr('fill', "#cccccc");
+                .attr('fill', "#cccccc")
+                .attr("fill-opacity", 0.8)
+                .on('mouseover', function(d, i){
+                    d3.select(this)
+                        .transition(300)
+                        .attr("fill-opacity", 1)
+                        .attr('r', 8);
+                    $("#year-slider").slider( "option", "value", d.year );
+                    tip_trend.show(d, i);
+                })
+                .on('mouseover', tip_trend.show)
+                .on('mouseout', function(d){
+                    d3.select(this)
+                        .transition(300)
+                        .attr("fill-opacity", 0.8)
+                        .attr('r', 5);
+                    tip_trend.hide(d);
+                })
     }
 };
