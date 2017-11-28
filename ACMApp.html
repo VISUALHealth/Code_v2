@@ -169,6 +169,7 @@
 		//initialize geomap
 		initVisMap();
 		//initialize trend chart
+		initVisLineChart(full_data);
 
 		//initialize box chart
 
@@ -180,6 +181,7 @@
 
         //control panel (for states)
         $("#state-set input").on("click", {dataset: full_data}, compare);
+        $("#state-set input").on("click", {dataset: full_data}, trend);
 
         // slider events
         $("#year-slider").on("slidechange", {dataset: full_data}, compare);
