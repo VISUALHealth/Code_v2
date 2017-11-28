@@ -76,7 +76,24 @@ function getCurTabTitle() {
 function getCurYear() {
     return $("#year-slider").slider("option", "value");
 }
-
+//get tab id
+function getTabId(_current_tab) {
+    var class_id;
+    switch (_current_tab) {
+        case 0:
+            class_id = "#tab-1-chart";
+            break;
+        case 1:
+            class_id = "#tab-2-chart";
+            break;
+        case 2:
+            class_id = "#tab-3-chart";
+            break;
+        default:
+            class_id = "#tab-1-chart";
+    }
+    return class_id;
+}
 //filter data
 //filter data by selected data
 function filterSelected(data, states) {
@@ -126,9 +143,32 @@ function datasetByTab(_current_tab, _years, _filtered_data, _other_data) {
     return {data_selected: data_selected, data_other: data_other};
 }
 
+//zip 3 arrays
+function zip(_data1, _data2, _data3) {
+    var n = _data1.length;
+    var m = (typeof _data3[0] === 'undefined')? 1:2;
+    var result = [];
+    for(var i=0; i<m; i++) {
+        result[i] = [];
+        for(var j=0; j<n; j++) {
+            if(i === 0) {
+                result[i].push({year: _data1[j], value: _data2[j]});
+            } else {
+                result[i].push({year: _data1[j], value: _data3[j]});
+            }
+        }
+    }
+    return result;
+}
+
 //create svg for comparison panel
 var margin = {top: 40, right: 30, left: 30, bottom: 40};
 var svg_comp;
+//create svg for line chart panel
+var width_line, height_line;
+var svg_trend_tab_1, svg_trend_tab_2, svg_trend_tab_3;
+var min_line = [];
+var max_line = [];
 
 function initVisComp() {
     var width_comp = $("#tab-comparison").width();
@@ -137,6 +177,68 @@ function initVisComp() {
         .append("svg")
         .attr("width", width_comp)
         .attr("height", height_comp);
+}
+
+//initialize line chart, default first tab
+function initVisLineChart(_full_data) {
+    //initialize svg for the 3 tabs
+    var years = [];
+    var dataset = [];
+    width_line = $("#tab-1-chart").width();
+    height_line = width_line*0.5;
+
+    for(var i=0; i<3; i++) {
+        var svg;
+        switch(i) {
+            case 0:
+                years = [2011, 2012, 2013, 2014, 2015, 2016];
+                dataset = getPremium(_full_data, years);
+                break;
+            case 1:
+                years = [2011, 2012, 2013, 2014, 2015];
+                dataset = getPremiumIncrease(_full_data, years);
+                break;
+            case 2:
+                years = [2011, 2012, 2013, 2014, 2015, 2016];
+                dataset = getPremiumIncome(_full_data, years);
+                break;
+        }
+        min_line[i] = d3.min(dataset, function(d) {return d3.min(d);});
+        max_line[i] = d3.max(dataset, function(d) {return d3.max(d);});
+
+        this["svg_trend_tab_"+(i+1)] = d3.select(getTabId(i))
+            .append("svg")
+            .attr("width", width_line)
+            .attr("height", height_line);
+
+        var x = d3.scaleLinear()
+            .domain([2011, d3.max(years)])
+            .range([0, width_line - margin.left - margin.right]);
+
+        var y = d3.scaleLinear()
+            .domain([min_line[i], max_line[i]])
+            .range([height_line - margin.top - margin.bottom, 0]);
+
+        //add axises
+        var xAxis = this["svg_trend_tab_"+(i+1)].append('g')
+            .attr('class', 'axis')
+            .attr('transform', 'translate(' + margin.left + ',' + (height_line - margin.bottom) + ')');
+        if(i === 1) {
+            xAxis.call(d3.axisBottom(x).ticks(5).tickFormat(d3.format("d")));
+        } else {
+            xAxis.call(d3.axisBottom(x).ticks(6).tickFormat(d3.format("d")));
+        }
+        var yAxis = this["svg_trend_tab_"+(i+1)].append('g')
+            .attr('class', 'axis')
+            .attr('transform', 'translate(' + margin.left + ',' + margin.top + ')');
+        if(i === 0) {
+            yAxis.call(d3.axisLeft(y).tickFormat(d3.format("d")));
+        } else {
+            yAxis.call(d3.axisLeft(y).tickFormat(d3.format(".0%")));
+        }
+    }
+    //plot the line chart
+    drawTrend(_full_data, years, "all-states", 0, svg_trend_tab_1);
 }
 
 //compare panel
@@ -158,6 +260,9 @@ var compare = function (event, ui) {
         $("#tab-comparison").html("<strong>We don't have 2017's data yet. You can select data from 2011 to 2015 to view the increase ratio.</strong>");
         $("#comp-result").css("display", "none");
         return;
+    } else {
+        $("#tab-comparison strong").css("display", "none");
+        $("#comp-result").css("display", "block");
     }
     var min_data = d3.min([d3.min(data_selected[0]),d3.min(data_other[0])]);
     var max_data = d3.max([d3.max(data_selected[0]),d3.max(data_other[0])]);
@@ -286,14 +391,13 @@ var compare = function (event, ui) {
 
     //show compare result
     if(data_other[0].length != 0) {
-        tTest(current_tab, year, data_selected[0], data_other[0]);
+        tTest(data_selected[0], data_other[0]);
     }
 };
 
 // t test
-function tTest(current_tab, year, sample_1, sample_2) {
+function tTest(sample_1, sample_2) {
     var p = ss.tTestTwoSample(sample_1, sample_2, 0);
-    console.log("p:"+p);
     if(Math.abs(p) <= 0.05) {
         if(p<0) {
             $("#comp-result img").attr("src", "Images/face_1.png");
@@ -313,31 +417,90 @@ function tTest(current_tab, year, sample_1, sample_2) {
 }
 
 //trend panel
-var trend = function (event, ui) {
-    //initialization
-    var years = [];
+var trend = function (event, ui) { //initialize the svg as needed
+    //refresh the control items
     var full_data = event.data.dataset;
     var states = getSelectedStates();
     var current_tab = getSelectedTab();
     var vis_option = getSelectedVis();
-    var filtered_data = filterSelected(full_data, states);
-    var other_data = filterOthers(full_data, states);
+    var years = (current_tab === 1)? [2011, 2012, 2013, 2014, 2015]:[2011, 2012, 2013, 2014, 2015, 2016];
 
-    //get dataset
-    if (current_tab == 1) {
-        years = [2011, 2012, 2013, 2014, 2015];
-    } else {
-        years = [2011, 2012, 2013, 2014, 2015, 2016];
+    //plot the line chart to the right svg
+    switch(current_tab) {
+        case 0: drawTrend(full_data, years, states, current_tab, svg_trend_tab_1); break;
+        case 1: drawTrend(full_data, years, states, current_tab, svg_trend_tab_2); break;
+        case 2: drawTrend(full_data, years, states, current_tab, svg_trend_tab_3); break;
     }
-    var dataset = datasetByTab(current_tab, years, filtered_data, other_data);
+};
+
+var drawTrend = function(_full_data, _years, _states, _current_tab, _svg) {
+    //get dataset
+    var filtered_data = filterSelected(_full_data, _states);
+    var other_data = filterOthers(_full_data, _states);
+    var dataset = datasetByTab(_current_tab, _years, filtered_data, other_data);
     var data_selected = dataset.data_selected;
     var data_other = dataset.data_other;
 
-    console.log(data_selected);
-    console.log(data_other);
-
     //calculate the average for line chart
+    var data_selected_avg = data_selected.map(function (d) {return d3.mean(d);});
+    var data_other_avg = data_other.map(function (d) {return d3.mean(d);});
+    var trend_data = zip(_years, data_selected_avg, data_other_avg);
 
-    //visualize the chart
+    var color = ["#56a0d3", "#cccccc"];
+    var x = d3.scaleLinear()
+        .domain([2011, d3.max(_years)])
+        .range([0, width_line - margin.left - margin.right]);
 
+    var y = d3.scaleLinear()
+        .domain([min_line[_current_tab], max_line[_current_tab]])
+        .range([height_line - margin.top - margin.bottom, 0]);
+
+    // define the line
+    var values = d3.line()
+        .x(function(d) { return x(d.year); })
+        .y(function(d) { return y(d.value); });
+
+    var line_chart = _svg.selectAll(".line").data(trend_data);
+
+    line_chart.exit()
+        .remove();
+
+    line_chart.enter()
+        .append('path')
+        .merge(line_chart)
+            .attr('class', 'line')
+            .attr('transform', 'translate(' + margin.left + ',' + margin.top + ')')
+            .attr('d', function(d){return values(d);})
+            .attr('fill', 'none')
+            .attr('stroke-width', 3)
+            .attr('stroke', function(d, i) {return color[i]});
+
+    //define point
+    var dots_selected = _svg.selectAll('.dot_selected').data(trend_data[0]);
+    dots_selected.exit()
+        .remove();
+    dots_selected.enter()
+        .append('circle')
+        .merge(dots_selected)
+            .attr('class', 'dot_selected')
+            .attr('r', 5)
+            .attr('transform', 'translate(' + margin.left + ',' + margin.top + ')')
+            .attr('cx', function(d){ return x(d.year);})
+            .attr('cy', function(d){ return y(d.value);})
+            .attr('fill', "#56a0d3");
+
+    if(_states !== 'all-states') {
+        var dots_others = _svg.selectAll('.dot_others').data(trend_data[1]);
+        dots_others.exit()
+            .remove();
+        dots_others.enter()
+            .append('circle')
+            .merge(dots_others)
+                .attr('class', 'dot_others')
+                .attr('r', 5)
+                .attr('transform', 'translate(' + margin.left + ',' + margin.top + ')')
+                .attr('cx', function(d){ return x(d.year);})
+                .attr('cy', function(d){ return y(d.value);})
+                .attr('fill', "#cccccc");
+    }
 };
