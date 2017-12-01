@@ -459,6 +459,7 @@ var trend = function (event, ui) { //initialize the svg as needed
             if(vis_option === "distribution") {}
             else drawTrend(full_data, years, states, current_tab, svg_trend_tab_3); break;
     }
+    //put it here
 };
 
 var drawTrend = function(_full_data, _years, _states, _current_tab, _svg) {
