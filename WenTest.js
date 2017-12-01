@@ -8,7 +8,7 @@ var svg_map;
 function scale (scaleFactor, width, height) {
     return d3.geoTransform({
         point: function(x, y) {
-            this.stream.point((x - width/2) * scaleFactor + width/2 , (y - height/2) * scaleFactor + height/2);
+            this.stream.point((x - 1*width/3) * scaleFactor + 1*width/3 , (y - 1*height/3) * scaleFactor+ 1*height/3);
         }
     });
 }
@@ -46,7 +46,7 @@ function initVisMap() {
     d3.json("https://d3js.org/us-10m.v1.json", function(error, us) {
         if (error) throw error;
 
-        var path = d3.geoPath().projection(scale(0.8, width_map, height_map));
+        var path = d3.geoPath().projection(scale(0.75, width_map, height_map));
 
         var pathes = svg_map.append("g")
             .attr("class", "states")

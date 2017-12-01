@@ -162,22 +162,15 @@ function zip(_data1, _data2, _data3) {
 }
 
 //create svg for comparison panel
-var margin = {top: 40, right: 30, left: 40, bottom: 40};
+var margin_comp = {top: 40, right: 10, left: 10, bottom: 40};
+var margin_trend = {top: 30, right: 15, left: 40, bottom: 20};
 var svg_comp;
 //create svg for line chart panel
 var width_line, height_line;
 var svg_trend_tab_1, svg_trend_tab_2, svg_trend_tab_3;
 var min_line = [];
 var max_line = [];
-
-function initVisComp() {
-    var width_comp = $("#tab-comparison").width();
-    var height_comp = width_comp*0.8;
-    svg_comp = d3.select("#tab-comparison")
-        .append("svg")
-        .attr("width", width_comp)
-        .attr("height", height_comp);
-}
+var clip_id = 0;
 
 //initialize line chart, default first tab
 function initVisLineChart(_full_data) {
@@ -203,8 +196,15 @@ function initVisLineChart(_full_data) {
                 dataset = getPremiumIncome(_full_data, years);
                 break;
         }
-        min_line[i] = d3.min(dataset, function(d) {return d3.min(d);});
-        max_line[i] = d3.max(dataset, function(d) {return d3.max(d);});
+        min_line[i] = d3.min(dataset, function(d) {return d3.mean(d);});
+        max_line[i] = d3.max(dataset, function(d) {return d3.mean(d);});
+        if(i===0 || i===2) {
+            min_line[i] = min_line[i]*0.9;
+            max_line[i] = max_line[i]*1.1;
+        } else {
+            min_line[i] = min_line[i]*1.1;
+            max_line[i] = max_line[i]*1.2;
+        }
 
         this["svg_trend_tab_"+(i+1)] = d3.select(getTabId(i))
             .append("svg")
@@ -213,16 +213,16 @@ function initVisLineChart(_full_data) {
 
         var x = d3.scaleLinear()
             .domain([2011, d3.max(years)])
-            .range([0, width_line - margin.left - margin.right]);
+            .range([0, width_line - margin_trend.left - margin_trend.right]);
 
         var y = d3.scaleLinear()
             .domain([min_line[i], max_line[i]])
-            .range([height_line - margin.top - margin.bottom, 0]);
+            .range([height_line - margin_trend.top - margin_trend.bottom, 0]);
 
         //add axises
         var xAxis = this["svg_trend_tab_"+(i+1)].append('g')
             .attr('class', 'axis')
-            .attr('transform', 'translate(' + margin.left + ',' + (height_line - margin.bottom) + ')');
+            .attr('transform', 'translate(' + margin_trend.left + ',' + (height_line - margin_trend.bottom) + ')');
         if(i === 1) {
             xAxis.call(d3.axisBottom(x).ticks(5).tickFormat(d3.format("d")));
         } else {
@@ -230,12 +230,36 @@ function initVisLineChart(_full_data) {
         }
         var yAxis = this["svg_trend_tab_"+(i+1)].append('g')
             .attr('class', 'axis')
-            .attr('transform', 'translate(' + margin.left + ',' + margin.top + ')');
+            .attr('transform', 'translate(' + margin_trend.left + ',' + margin_trend.top + ')');
         if(i === 0) {
-            yAxis.call(d3.axisLeft(y).tickFormat(d3.format("d")));
+            yAxis.call(d3.axisLeft(y).ticks(6).tickFormat(d3.format("d")));
         } else {
-            yAxis.call(d3.axisLeft(y).tickFormat(d3.format(".0%")));
+            yAxis.call(d3.axisLeft(y).ticks(8).tickFormat(d3.format(".0%")));
         }
+
+        //add legend
+        var g_legend = this["svg_trend_tab_"+(i+1)].append("g");
+        g_legend.append("circle")
+            .attr("cx", 30)
+            .attr("cy", 10)
+            .attr("r", "8")
+            .attr("fill", "#56a0d3");
+        g_legend.append("text")
+            .attr("id", "legend-text"+(i+1))
+            .attr("x", 45)
+            .attr("y", 15)
+            .style("font-size", "0.8em")
+            .text("Selected States: " + getSelectedStatesLabel());
+        g_legend.append("circle")
+            .attr("cx", 250)
+            .attr("cy", 10)
+            .attr("r", "8")
+            .attr("fill", "#cccccc");
+        g_legend.append("text")
+            .attr("x", 265)
+            .attr("y", 15)
+            .style("font-size", "0.8em")
+            .text("Unselected States");
     }
     //plot the line chart
     drawTrend(_full_data, years, "all-states", 0, svg_trend_tab_1);
@@ -256,7 +280,7 @@ var compare = function (event, ui) {
     var data_selected = dataset.data_selected;
     var data_other = dataset.data_other;
 
-    if (current_tab == 1 && year == 2016) {
+    if (current_tab === 1 && year === 2016) {
         $("#tab-comparison").html("<strong>We don't have 2017's data yet. You can select data from 2011 to 2015 to view the increase ratio.</strong>");
         $("#comp-result").css("display", "none");
         return;
@@ -267,12 +291,12 @@ var compare = function (event, ui) {
     var min_data = d3.min([d3.min(data_selected[0]),d3.min(data_other[0])]);
     var max_data = d3.max([d3.max(data_selected[0]),d3.max(data_other[0])]);
     var width_comp = $("#tab-comparison").width();
-    var height_comp = width_comp*0.9;
+    var height_comp = width_comp*0.6;
     var bin_count = 6;
 
     var x = d3.scaleLinear()
         .domain([min_data, max_data])
-        .rangeRound([margin.left, width_comp-margin.right]);
+        .rangeRound([margin_comp.left, width_comp-margin_comp.right]);
 
     var bins_selected = d3.histogram()
         .domain(x.domain())
@@ -288,7 +312,7 @@ var compare = function (event, ui) {
 
     var y = d3.scaleLinear()
         .domain([0, y_height])
-        .range([height_comp-margin.bottom, margin.top]);
+        .range([height_comp-margin_comp.bottom, margin_comp.top]);
 
     svg_comp = d3.select("#tab-comparison")
         .append("svg")
@@ -299,33 +323,31 @@ var compare = function (event, ui) {
     //add legend
     var g_legend = svg_comp.append("g");
     g_legend.append("rect")
-        .attr("x", margin.left)
+        .attr("x", margin_comp.left)
         .attr("y", 2)
         .attr("width", "8")
         .attr("height", "8")
         .attr("fill", "#56a0d3");
     g_legend.append("text")
-        .attr("class", "axis-label")
-        .attr("x", margin.left+15)
+        .attr("x", margin_comp.left+15)
         .attr("y", 10)
         .style("font-size", "0.8em")
         .text("Selected States: " + getSelectedStatesLabel());
     g_legend.append("rect")
-        .attr("x", margin.left)
+        .attr("x", margin_comp.left)
         .attr("y", 20)
         .attr("width", "8")
         .attr("height", "8")
         .attr("fill", "#cccccc");
     g_legend.append("text")
-        .attr("class", "axis-label")
-        .attr("x", margin.left+15)
+        .attr("x", margin_comp.left+15)
         .attr("y", 28)
         .style("font-size", "0.8em")
         .text("Unselected States");
 
     svg_comp.append("g")
         .attr("class", "axis axis--x")
-        .attr("transform", "translate(0, "+(height_comp-margin.bottom)+")")
+        .attr("transform", "translate(0, "+(height_comp-margin_comp.bottom)+")")
         .call(d3.axisBottom(x));
 
     svg_comp.append("text")
@@ -354,15 +376,15 @@ var compare = function (event, ui) {
     svg_comp.call(tip_comp_2);
 
     //others bar
-    if (data_other[0].length != 0) {
+    if (data_other[0].length !== 0) {
         var bar_other = svg_comp.selectAll(".bar-other").data(bins_other);
         bar_other.enter().append("g")
             .attr("class", "bar-other")
             .attr("transform", function(d){return "translate(0,"+y(d.length/data_other[0].length)+")";})
             .append("rect")
-            .attr("x", 1)
-            .attr("width", (x(bins_other[0].x1) - x(bins_other[0].x0) - 1))
-            .attr("height", function(d) { return height_comp-margin.bottom - y(d.length/data_other[0].length); })
+            .attr("x", 3)
+            .attr("width", (x(bins_other[0].x1) - x(bins_other[0].x0) - 3))
+            .attr("height", function(d) { return height_comp-margin_comp.bottom - y(d.length/data_other[0].length); })
             .attr("fill", function(d) { return "#cccccc"; }) //#286c9b
             .attr("fill-opacity", 0.8)
             .on("mouseover", tip_comp_1.show)
@@ -378,9 +400,9 @@ var compare = function (event, ui) {
         .attr("class", "bar")
         .attr("transform", function(d){return "translate(0,"+y(d.length/data_selected[0].length)+")";})
         .append("rect")
-        .attr("x", 1)
-        .attr("width", (x(bins_selected[0].x1) - x(bins_selected[0].x0) - 1))
-        .attr("height", function(d) { return height_comp-margin.bottom - y(d.length/data_selected[0].length); })
+        .attr("x", 3)
+        .attr("width", (x(bins_selected[0].x1) - x(bins_selected[0].x0) - 3))
+        .attr("height", function(d) { return height_comp-margin_comp.bottom - y(d.length/data_selected[0].length); })
         .attr("fill", function(d) { return "#56a0d3"; })
         .attr("fill-opacity", 0.6)
         .on("mouseover", tip_comp_2.show)
@@ -390,7 +412,7 @@ var compare = function (event, ui) {
             .attr("transform", function(d){return "translate("+x(d.x0)+",0)"; });
 
     //show compare result
-    if(data_other[0].length != 0) {
+    if(data_other[0].length !== 0) {
         tTest(data_selected[0], data_other[0]);
     }
 };
@@ -460,20 +482,34 @@ var drawTrend = function(_full_data, _years, _states, _current_tab, _svg) {
         });
     _svg.call(tip_trend);
 
+    _svg.selectAll("#legend-text"+(_current_tab+1)).text("Selected States: " + getSelectedStatesLabel());
+
     var x = d3.scaleLinear()
         .domain([2011, d3.max(_years)])
-        .range([0, width_line - margin.left - margin.right]);
+        .range([0, width_line - margin_trend.left - margin_trend.right]);
 
     var y = d3.scaleLinear()
         .domain([min_line[_current_tab], max_line[_current_tab]])
-        .range([height_line - margin.top - margin.bottom, 0]);
+        .range([height_line - margin_trend.top - margin_trend.bottom, 0]);
 
     // define the line
     var values = d3.line()
         .x(function(d) { return x(d.year); })
         .y(function(d) { return y(d.value); });
 
+    _svg.selectAll("clipPath").remove();
+    _svg.selectAll("rect").remove();
+    _svg.append("clipPath")
+        .attr("id", "clipper"+clip_id)
+        .append("rect")
+        .attr("id", "clip-rect"+clip_id)
+        .attr("x", 0)
+        .attr("y", 0)
+        .attr("height", height_line)
+        .attr("width", 0);
+
     var line_chart = _svg.selectAll(".line").data(trend_data);
+    line_chart.attr("clip-path", "url(#clipper"+clip_id+")");
 
     line_chart.exit()
         .remove();
@@ -482,14 +518,23 @@ var drawTrend = function(_full_data, _years, _states, _current_tab, _svg) {
         .append('path')
         .merge(line_chart)
             .attr('class', 'line')
-            .attr('transform', 'translate(' + margin.left + ',' + margin.top + ')')
+            .attr('transform', 'translate(' + margin_trend.left + ',' + margin_trend.top + ')')
             .attr('d', function(d){return values(d);})
             .attr('fill', 'none')
             .attr('stroke-width', 3)
             .attr('stroke', function(d, i) {return color[i]});
 
+    _svg.select("#clip-rect"+clip_id)
+        .attr("width", 0)
+        .transition()
+            .duration(1500)
+            .attr("width", width_line);
+    clip_id++;
+
     //define point
     var dots_selected = _svg.selectAll('.dot_selected').data(trend_data[0]);
+    var dots_others = _svg.selectAll('.dot_others');
+
     dots_selected.exit()
         .remove();
     dots_selected.enter()
@@ -497,56 +542,58 @@ var drawTrend = function(_full_data, _years, _states, _current_tab, _svg) {
         .merge(dots_selected)
             .attr('class', 'dot_selected')
             .attr('r', 5)
-            .attr('transform', 'translate(' + margin.left + ',' + margin.top + ')')
+            .attr('transform', 'translate(' + margin_trend.left + ',' + margin_trend.top + ')')
             .attr('cx', function(d){ return x(d.year);})
             .attr('cy', function(d){ return y(d.value);})
             .attr('fill', "#56a0d3")
             .attr("fill-opacity", 0.8)
             .on('mouseover', function(d, i){
                 d3.select(this)
-                    .transition(300)
+                    .transition()
                     .attr("fill-opacity", 1)
-                    .attr('r', 8);
+                    .attr('r', 10);
                 $("#year-slider").slider( "option", "value", d.year);
                 tip_trend.show(d, i);
             })
             .on('mouseout', function(d){
                 d3.select(this)
-                    .transition(300)
+                    .transition()
                     .attr("fill-opacity", 0.8)
                     .attr('r', 5);
                 tip_trend.hide(d);
             });
 
+
     if(_states !== 'all-states') {
-        var dots_others = _svg.selectAll('.dot_others').data(trend_data[1]);
-        dots_others.exit()
+        var dots_others_data = dots_others.data(trend_data[1]);
+        dots_others_data.exit()
             .remove();
-        dots_others.enter()
+        dots_others_data.enter()
             .append('circle')
-            .merge(dots_others)
+            .merge(dots_others_data)
                 .attr('class', 'dot_others')
                 .attr('r', 5)
-                .attr('transform', 'translate(' + margin.left + ',' + margin.top + ')')
+                .attr('transform', 'translate(' + margin_trend.left + ',' + margin_trend.top + ')')
                 .attr('cx', function(d){ return x(d.year);})
                 .attr('cy', function(d){ return y(d.value);})
                 .attr('fill', "#cccccc")
                 .attr("fill-opacity", 0.8)
                 .on('mouseover', function(d, i){
                     d3.select(this)
-                        .transition(300)
+                        .transition()
                         .attr("fill-opacity", 1)
-                        .attr('r', 8);
+                        .attr('r', 10);
                     $("#year-slider").slider( "option", "value", d.year );
                     tip_trend.show(d, i);
                 })
-                .on('mouseover', tip_trend.show)
                 .on('mouseout', function(d){
                     d3.select(this)
-                        .transition(300)
+                        .transition()
                         .attr("fill-opacity", 0.8)
                         .attr('r', 5);
                     tip_trend.hide(d);
-                })
+                });
+    } else {
+        dots_others.remove();
     }
 };

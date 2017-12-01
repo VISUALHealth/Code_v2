@@ -1,0 +1,213 @@
+<!doctype html>
+<html lang="en">
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="initial-scale=1.0, width=device-width">
+    <title>Visualization of Health Insurance Premium and Coverage</title>
+    <link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Lato">
+    <link rel="stylesheet" href="../Code_v2/jquery-ui-1.12.1.custom/jquery-ui.min.css">
+    <link rel="stylesheet" href="../Code_v2/jquery-ui-1.12.1.custom/jquery-ui.structure.min.css">
+    <link rel="stylesheet" href="../Code_v2/jquery-ui-1.12.1.custom/jquery-ui.theme.min.css">
+    <link rel="stylesheet" href="Style_v2.css">
+    <script src="https://d3js.org/d3.v4.min.js"></script>
+    <script src="https://npmcdn.com/simple-statistics@2.0.0/dist/simple-statistics.min.js"></script>
+    <script src="https://code.jquery.com/jquery-1.12.4.js"></script>
+    <script src="../Code_v2/jquery-ui-1.12.1.custom/jquery-ui.min.js"></script>
+    <script src="d3-tip.js"></script>
+    <script src="vis.js"></script>
+    <script src="../Code_v2/data/data.js"></script>
+    <script src="https://d3js.org/topojson.v2.min.js"></script>
+    <script src="WenTest.js"></script>
+</head>
+<body>
+<div id="header">
+    <img src="Images/health_vis_icon.jpg">
+    <h1>Visualization of Health Insurance Premium and Coverage</h1>
+</div>
+<div id="main-panel">
+    <div class="geo-flex-container">
+        <div class="control-panel">
+            <div class="state-selection">
+                <h3 class="title">Select Focus States</h3>
+                <fieldset id="state-set">
+                    <label for="all-states">All</label>
+                    <input type="radio" name="states" id="all-states" checked="true" value="all-states">
+                    <label for="rep">Republican States</label>
+                    <input type="radio" name="states" id="rep" value="rep">
+                    <label for="dem">Democrat States</label>
+                    <input type="radio" name="states" id="dem" value="dem">
+                    <label for="shifter">Shifters from 2012 to 2016</label>
+                    <input type="radio" name="states" id="shifter" value="shifter">
+                </fieldset>
+            </div>
+            <div class="demo-selection">
+                <h3 class="title">Health Insurance Coverage</h3>
+                <div class="dem-control-container">
+                    <div class="demo-group">
+                        <p>Select Demographic Segments</p>
+                        <form class="demo-form" action="#">
+                            <select name="demgraphic" id="demgraphic">
+                                <option id="race" value="race" selected="selected">Race</option>
+                                <option id="age" value="age">Age Interval</option>
+                                <option id="income" value="income">Income Level</option>
+                            </select>
+                        </form>
+                    </div>
+                    <div id="subgroups">
+                        <fieldset>
+                            <legend>Select Subgroup(s)</legend>
+                            <label for="white">White</label>
+                            <input id="white" name="white" type="checkbox">
+                            <label for="black">Black</label>
+                            <input id="black" name="black" type="checkbox">
+                            <label for="asian">Asian</label>
+                            <input id="asian" name="asian" type="checkbox">
+                            <label for="hawaiian">Hawaiian</label>
+                            <input id="hawaiian" name="hawaiian" type="checkbox">
+                            <label for="multirace">Multirace</label>
+                            <input id="multirace" name="multirace" type="checkbox">
+                            <label for="other">Other</label>
+                            <input id="other" name="other" type="checkbox">
+                        </fieldset>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="geo-map-panel">
+            <p>
+                <label for="selected-year">Selected year: </label>
+                <input type="text" id="selected-year" readonly style="border:0">
+            </p>
+            <div id="year-slider"></div>
+            <div id="geo-map"><!--geo map --></div>
+        </div>
+    </div>
+    <div class="charts-panel">
+        <div class="chart-flex-container">
+            <div id="tab-panel">
+                <h3 class="title">Over-year Trend Visualization</h3>
+                <fieldset id="visual-option">
+                    <label for="tab-trend">Trend</label>
+                    <input type="radio" name="tab-viz-option" id="tab-trend" checked="true" value="trend">
+                    <label for="tab-distribution">Distribution</label>
+                    <input type="radio" name="tab-viz-option" id="tab-distribution" value="distribution">
+                </fieldset>
+            </div>
+            <div id="chart-tabs">
+                <ul>
+                    <li><a href="#tabs-1">Employee Contribution and Deductible ($)</a></li>
+                    <li><a href="#tabs-2">Employee Total Premium Annual Increase (%)</a></li>
+                    <li><a href="#tabs-3">Employee Total vs Household Income Median (%)</a></li>
+                </ul>
+                <div id="tabs-1">
+                    <div id="tab-1-chart" class="chart-area">
+                        <!--Employee contribution and deductible -->
+                    </div>
+                </div>
+                <div id="tabs-2">
+                    <div class="chart-flex-container">
+                        <div id="tab-2-chart" class="chart-area">
+                            <!--Employee Total Premium Annual Increase -->
+                        </div>
+                    </div>
+                </div>
+                <div id="tabs-3">
+                    <div class="chart-flex-container">
+                        <div id="tab-3-chart" class="chart-area">
+                            <!--Employee Total vs Household Income Median -->
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div id="comp-panel">
+                <h3 class="title">Insurance Premium Comparison</h3>
+                <div id="comp-result">
+                    <table>
+                        <tr>
+                            <td><img width="50" src=""></td>
+                            <td><div id="comp-p"></div></td>
+                        </tr>
+                    </table>
+                </div>
+                <div id="tab-comparison"><!--Insurance Premium Comparison --></div>
+            </div>
+        </div>
+    </div>
+</div>
+<footer>
+    <p>&copy; Wanchen Zhao, Wenyun Wang, Qichen Yu, UNC at Chapel Hill, 2017</p>
+</footer>
+<script>
+    $(document).ready(function() {
+        var subgroups = $("#subgroups");
+        $("#state-set input").checkboxradio();
+        $("#all-states").prop("checked", true).checkboxradio("refresh");
+        $("#subgroups input").checkboxradio();
+        $("#tab-panel input").checkboxradio();
+        $("#tab-trend").prop("checked", true).checkboxradio("refresh");
+        $("#year-slider").slider({
+            range: "min",
+            value: 2016,
+            min: 2011,
+            max: 2016,
+            slide: function( event, ui ) {
+                $("#selected-year").val(ui.value);
+            },
+            change: function(event, ui) {
+                $("#selected-year").val(ui.value);
+            }
+        });
+        $("#selected-year").val($("#year-slider").slider("value"));
+        $("#chart-tabs").tabs();
+        $("#demgraphic").selectmenu({
+            change: function(event, data){
+                var id = data.item.value;
+                switch(id) {
+                    case "race":
+                        subgroups.html('<fieldset><legend>Select Subgroup(s)</legend> <label for="white">White</label> <input id="white" name="white" type="checkbox"> <label for="black">Black</label> <input id="black" name="black" type="checkbox"> <label for="asian">Asian</label> <input id="asian" name="asian" type="checkbox"> <label for="hawaiian">Hawaiian</label> <input id="hawaiian" name="hawaiian" type="checkbox"> <label for="multirace">Multirace</label> <input id="multirace" name="multirace" type="checkbox"> <label for="other">Other</label> <input id="other" name="other" type="checkbox"></fieldset>');
+                        $("#subgroups input").checkboxradio();
+                        break;
+                    case "income":
+                        subgroups.html('<fieldset><legend>Select Subgroup(s)</legend> <label for="Total_Inc25000">Under $25,000</label> <input id="Total_Inc25000" name="Total_Inc25000" type="checkbox"> <label for="Total_Inc50000">$25,000 to $49,999</label> <input id="Total_Inc50000" name="Total_Inc50000" type="checkbox"> <label for="Total_Inc75000">$50,000 to $74,999</label> <input id="Total_Inc75000" name="Total_Inc75000" type="checkbox"> <label for="Total_Inc100000">$75,000 to $99,999</label> <input id="Total_Inc100000" name="Total_Inc100000" type="checkbox"> <label for="Total_Inc999999">$100,000 and over</label> <input id="Total_Inc999999" name="Total_Inc999999" type="checkbox"></fieldset>');
+                        $("#subgroups input").checkboxradio();
+                        break;
+                    case "age":
+                        subgroups.html('<fieldset><legend>Select Subgroup(s)</legend> <label for="Total_Age18">Under 18 years</label> <input id="Total_Age18" name="Total_Age18" type="checkbox"> <label for="Total_Age18-64">18 to 64 years</label> <input id="Total_Age18-64" name="Total_Age18-64" type="checkbox"> <label for="Total_Age65">65 years and older</label> <input id="Total_Age65" name="Total_Age65" type="checkbox"></fieldset>');
+                        $("#subgroups input").checkboxradio();
+                        break;
+                    default:
+                        subgroups.html('<fieldset><legend>Select Subgroup(s)</legend> <label for="white">White</label> <input id="white" name="white" type="checkbox"> <label for="black">Black</label> <input id="black" name="black" type="checkbox"> <label for="asian">Asian</label> <input id="asian" name="asian" type="checkbox"> <label for="hawaiian">Hawaiian</label> <input id="hawaiian" name="hawaiian" type="checkbox"> <label for="multirace">Multirace</label> <input id="multirace" name="multirace" type="checkbox"> <label for="other">Other</label> <input id="other" name="other" type="checkbox"></fieldset>');
+                        $("#subgroups input").checkboxradio();
+                }
+            }
+        });
+
+        /****** Initialization for SVGs ******/
+
+        //initialize geomap
+        initVisMap();
+        //initialize trend chart
+        initVisLineChart(full_data);
+
+        //initialize box chart
+
+
+        /****** Bind events ******/
+        // tab
+        $("#chart-tabs").on("tabsactivate", {dataset: full_data}, compare);
+        $("#chart-tabs").on("tabsactivate", {dataset: full_data}, trend);
+
+        //control panel (for states)
+        $("#state-set input").on("click", {dataset: full_data}, compare);
+        $("#state-set input").on("click", {dataset: full_data}, trend);
+
+        // slider events
+        $("#year-slider").on("slidechange", {dataset: full_data}, compare);
+
+
+
+
+    });
+</script>
+</body>
+</html>
