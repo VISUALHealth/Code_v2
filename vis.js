@@ -449,9 +449,15 @@ var trend = function (event, ui) { //initialize the svg as needed
 
     //plot the line chart to the right svg
     switch(current_tab) {
-        case 0: drawTrend(full_data, years, states, current_tab, svg_trend_tab_1); break;
-        case 1: drawTrend(full_data, years, states, current_tab, svg_trend_tab_2); break;
-        case 2: drawTrend(full_data, years, states, current_tab, svg_trend_tab_3); break;
+        case 0:
+            if(vis_option === "distribution") {}
+            else drawTrend(full_data, years, states, current_tab, svg_trend_tab_1); break;
+        case 1:
+            if(vis_option === "distribution") {}
+            else drawTrend(full_data, years, states, current_tab, svg_trend_tab_2); break;
+        case 2:
+            if(vis_option === "distribution") {}
+            else drawTrend(full_data, years, states, current_tab, svg_trend_tab_3); break;
     }
 };
 

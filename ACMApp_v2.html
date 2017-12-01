@@ -204,8 +204,8 @@
         // slider events
         $("#year-slider").on("slidechange", {dataset: full_data}, compare);
 
-
-
+        // visualization option
+        $("#visual-option input").on("click", {dataset: full_data}, trend);
 
     });
 </script>
