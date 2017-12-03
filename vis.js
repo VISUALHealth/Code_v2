@@ -179,6 +179,7 @@ function initVisLineChart(_full_data) {
     var dataset = [];
     width_line = $("#tab-1-chart").width();
     height_line = width_line*0.5;
+    barWidth =15;
 
     for(var i=0; i<3; i++) {
         var svg;
@@ -440,6 +441,7 @@ function tTest(sample_1, sample_2) {
 
 //trend panel
 var trend = function (event, ui) { //initialize the svg as needed
+
     //refresh the control items
     var full_data = event.data.dataset;
     var states = getSelectedStates();
@@ -450,17 +452,33 @@ var trend = function (event, ui) { //initialize the svg as needed
     //plot the line chart to the right svg
     switch(current_tab) {
         case 0:
-            if(vis_option === "distribution") {}
+            if(vis_option === "distribution") {
+                $("#line_chart").remove();
+                $(".dot_selected").remove();
+                drawDis(full_data, years, states, current_tab, svg_trend_tab_1);
+
+            }
             else drawTrend(full_data, years, states, current_tab, svg_trend_tab_1); break;
         case 1:
-            if(vis_option === "distribution") {}
+            if(vis_option === "distribution") {
+                $("#line_chart").remove();
+                $(".dot_selected").remove();
+                drawDis(full_data, years, states, current_tab, svg_trend_tab_2);
+
+            }
             else drawTrend(full_data, years, states, current_tab, svg_trend_tab_2); break;
         case 2:
-            if(vis_option === "distribution") {}
+            if(vis_option === "distribution") {
+                $("#line_chart").remove();
+                $(".dot_selected").remove();
+                drawDis(full_data, years, states, current_tab, svg_trend_tab_3);
+
+            }
             else drawTrend(full_data, years, states, current_tab, svg_trend_tab_3); break;
     }
     //put it here
 };
+
 
 var drawTrend = function(_full_data, _years, _states, _current_tab, _svg) {
     //get dataset
@@ -469,6 +487,8 @@ var drawTrend = function(_full_data, _years, _states, _current_tab, _svg) {
     var dataset = datasetByTab(_current_tab, _years, filtered_data, other_data);
     var data_selected = dataset.data_selected;
     var data_other = dataset.data_other;
+    //console.log(data_selected);
+
 
     //calculate the average for line chart
     var data_selected_avg = data_selected.map(function (d) {return d3.mean(d);});
@@ -529,7 +549,8 @@ var drawTrend = function(_full_data, _years, _states, _current_tab, _svg) {
             .attr('d', function(d){return values(d);})
             .attr('fill', 'none')
             .attr('stroke-width', 3)
-            .attr('stroke', function(d, i) {return color[i]});
+            .attr('stroke', function(d, i) {return color[i]})
+            .attr("id", "line_chart");
 
     _svg.select("#clip-rect"+clip_id)
         .attr("width", 0)
@@ -604,3 +625,201 @@ var drawTrend = function(_full_data, _years, _states, _current_tab, _svg) {
         dots_others.remove();
     }
 };
+
+// Inspired by https://bl.ocks.org/rjurney/e04ceddae2e8f85cf3afe4681dac1d74
+var drawDis = function (_full_data, _years, _states, _current_tab, _svg) {
+    //get dataset
+    var filtered_data = filterSelected(_full_data, _states);
+    var other_data = filterOthers(_full_data, _states);
+    var dataset = datasetByTab(_current_tab, _years, filtered_data, other_data);
+    var data_selected = dataset.data_selected;
+    //console.log(data_selected);
+
+    // prepare data for boxPlot data
+    var groupCounts={};
+
+    for (i=0;i<_years.length;i++){
+        //var key = i.toString();
+        var key =_years[i];
+        groupCounts[key]=data_selected[i];
+    }
+    //console.log("groupCounts");
+    //console.log(groupCounts);
+    //console.log(globalCounts);
+
+    // Sort group counts so quantile methods work
+    for(var key in groupCounts) {
+        var groupCount = groupCounts[key];
+        groupCounts[key] = groupCount.sort(sortNumber);
+    }
+
+    //console.log(groupCount);
+   // console.log(groupCounts);
+
+    // Prepare the data for the box plots
+    var boxPlotData = [];
+    for (var [key, groupCount] of Object.entries(groupCounts)) {
+        //console.log(groupCount);
+        var record = {};
+        var localMin = d3.min(groupCount);
+        var localMax = d3.max(groupCount);
+
+        record["key"] = key;
+        record["counts"] = groupCount;
+        record["quartile"] = boxQuartiles(groupCount);
+        record["whiskers"] = [localMin, localMax];
+
+        boxPlotData.push(record);
+
+    }
+    console.log(boxPlotData);
+
+// calculate quantitle data
+    function boxQuartiles(d) {
+        return [
+            d3.quantile(d, .25),
+            d3.quantile(d, .5),
+            d3.quantile(d, .75)
+        ];
+    }
+
+// Perform a numeric sort on an array
+    function sortNumber(a,b) {
+        return a - b;
+    }
+
+    // Compute an ordinal xScale for the keys in boxPlotData
+    var xScale = d3.scalePoint()
+        .domain(Object.keys(groupCounts))
+        .rangeRound([0, width_line - margin_trend.left - margin_trend.right])
+        .padding([0.5]);
+
+
+    // Compute a global y scale based on the global counts
+    var min1 = data_selected.map(function (d) {return d3.min(d);});
+    var max1 = data_selected.map(function (d) {return d3.max(d);});
+    var min = d3.min(min1);
+    var max = d3.max(max1);
+
+    var yScale = d3.scaleLinear()
+        .domain([min, max])
+        .range([height_line - margin_trend.top - margin_trend.bottom,0]);
+
+    // Setup the group the box plot elements will render in
+    var g = _svg.append("g")
+        .attr("transform", "translate(20,5)");
+
+//-------------------------draw--------------------
+    // Draw the box plot vertical lines
+
+    var verticalLines = g.selectAll(".verticalLines").data(boxPlotData);
+
+    verticalLines.exit().remove();
+
+    verticalLines.enter()
+        .append("line")
+        .merge(verticalLines)
+            .attr("x1", function(datum) {
+                return xScale(datum.key) + barWidth/2;
+            }
+            )
+            .attr("y1", function(datum) {
+                var whisker = datum.whiskers[0];
+                return yScale(whisker);
+            }
+            )
+            .attr("x2", function(datum) {
+                return xScale(datum.key) + barWidth/2;
+            }
+            )
+            .attr("y2", function(datum) {
+                var whisker = datum.whiskers[1];
+                return yScale(whisker);
+            }
+            )
+            .attr("stroke", "#000")
+            .attr("stroke-width", 1)
+            .attr("fill", "none");
+
+
+   // g.selectAll(".verticalLines").exit().remove();
+
+
+    // Draw the boxes of the box plot, filled in white and on top of vertical lines
+    // 加一个，鼠标在方块上会出现文字，年份，max,min
+
+    var rects = g.selectAll("rect").data(boxPlotData);
+
+    rects.exit().remove();
+
+    rects.enter()
+        .append("rect")
+        .attr("width", barWidth)
+        .attr("height", function(datum) {
+                var quartiles = datum.quartile;
+                var height = yScale(quartiles[0]) - yScale(quartiles[2]);
+                return height;
+            }
+        )
+        .attr("x", function(datum) {
+                return xScale(datum.key);
+            }
+        )
+        .attr("y", function(datum) {
+                return yScale(datum.quartile[2]);
+            }
+        )
+        .attr('fill', "#56a0d3")
+        .attr("stroke", "#000")
+        .attr("stroke-width", 1);
+
+    //g.selectAll("rect").exit().remove();
+
+    // Now render all the horizontal lines at once - the whiskers and the median
+    var horizontalLineConfigs = [
+        // Top whisker
+        {
+            x1: function(datum) { return xScale(datum.key) },
+            y1: function(datum) { return yScale(datum.whiskers[1]) },
+            x2: function(datum) { return xScale(datum.key) + barWidth },
+            y2: function(datum) { return yScale(datum.whiskers[1]) }
+        },
+        // Median line
+        {
+            x1: function(datum) { return xScale(datum.key) },
+            y1: function(datum) { return yScale(datum.quartile[1]) },
+            x2: function(datum) { return xScale(datum.key) + barWidth },
+            y2: function(datum) { return yScale(datum.quartile[1]) }
+        },
+        // Bottom whisker
+        {
+            x1: function(datum) { return xScale(datum.key) },
+            y1: function(datum) { return yScale(datum.whiskers[0]) },
+            x2: function(datum) { return xScale(datum.key) + barWidth },
+            y2: function(datum) { return yScale(datum.whiskers[0]) }
+        }
+    ];
+
+    for(var i=0; i < horizontalLineConfigs.length; i++) {
+        var lineConfig = horizontalLineConfigs[i];
+
+        // Draw the whiskers at the min for this series
+        var horizontalLine = g.selectAll(".whiskers").data(boxPlotData);
+
+        horizontalLine.exit().remove();
+
+        horizontalLine.enter()
+            .append("line")
+            .merge(horizontalLine)
+            .attr("x1", lineConfig.x1)
+            .attr("y2", lineConfig.y1)
+            .attr("x2", lineConfig.x2)
+            .attr("y1", lineConfig.y2)
+            .attr("stroke", "#000")
+            .attr("stroke-width", 1)
+            .attr("fill", "none");
+
+        //g.selectAll(".whiskers").exit().remove();
+
+    }
+}

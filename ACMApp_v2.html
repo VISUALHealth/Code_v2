@@ -196,16 +196,19 @@
         // tab
         $("#chart-tabs").on("tabsactivate", {dataset: full_data}, compare);
         $("#chart-tabs").on("tabsactivate", {dataset: full_data}, trend);
+       // $("#chart-tabs").on("tabsactivate", {dataset: full_data}, distribution);
 
         //control panel (for states)
         $("#state-set input").on("click", {dataset: full_data}, compare);
         $("#state-set input").on("click", {dataset: full_data}, trend);
+       // $("#state-set input").on("click", {dataset: full_data}, distribution);
 
         // slider events
         $("#year-slider").on("slidechange", {dataset: full_data}, compare);
 
         // visualization option
         $("#visual-option input").on("click", {dataset: full_data}, trend);
+       // $("#visual-option input").on("click", {dataset: full_data}, distribution);
 
         //comit
 
