@@ -200,12 +200,13 @@
         //control panel (for states)
         $("#state-set input").on("click", {dataset: full_data}, compare);
         $("#state-set input").on("click", {dataset: full_data}, trend);
+        $("#state-set input").on("click", {dataset: full_data}, map_refresh);
 
         // slider events
         $("#year-slider").on("slidechange", {dataset: full_data}, compare);
+        $("#year-slider").on("slidechange", {dataset: full_data}, map_refresh);
 
-        // visualization option
-        $("#visual-option input").on("click", {dataset: full_data}, trend);
+
 
     });
 </script>
