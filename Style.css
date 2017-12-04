@@ -4,49 +4,54 @@ Custom Styles
 ===============================
 */
 body {
-	font-family: 'Lato', serif;
+    font-family: 'Lato', serif;
     font-weight: 400;
-	font-size: 1em;
-	line-height: 1.5em;
-	margin: 0;
-	padding: 1em;
-	color: #202021;
-	background-color: #56a0d3;
+    font-size: 1em;
+    line-height: 1.5em;
+    margin: 0;
+    padding: 0.5em;
+    color: #202021;
+    background-color: #56a0d3;
+    height: 100vh;
 }
 h1,h2,h3,h4 {
-	font-family: 'Lato', serif;
-	font-weight: 500;
+    font-weight: 500;
+}
+p {
+    font-size: 0.8em;
+    margin: 0;
 }
 /*tool tip style*/
 .d3-tip {
-	line-height: 1;
-	padding: 12px;
-	background: rgba(0, 0, 0, 0.8);
-	color: #fff;
-	border-radius: 2px;
+    padding: 12px;
+    background: rgba(0, 0, 0, 0.8);
+    color: #fff;
+    border-radius: 2px;
+    font-size: 0.8em;
+    line-height: 1.2em;
 }
 
 /* Creates a small triangle extender for the tooltip */
 .d3-tip:after {
-	box-sizing: border-box;
-	display: inline;
-	font-size: 10px;
-	width: 100%;
-	line-height: 1;
-	color: rgba(0, 0, 0, 0.8);
-	content: "\25BC";
-	position: absolute;
-	text-align: center;
+    box-sizing: border-box;
+    display: inline;
+    font-size: 10px;
+    width: 100%;
+    line-height: 1;
+    color: rgba(0, 0, 0, 0.8);
+    content: "\25BC";
+    position: absolute;
+    text-align: center;
 }
 
 /* Style northward tooltips differently */
 .d3-tip.n:after {
-	margin: -2px 0 0 0;
-	top: 100%;
-	left: 0;
+    margin: -2px 0 0 0;
+    top: 100%;
+    left: 0;
 }
 ul {
-	list-style: none;
+    list-style: none;
 }
 /**,
 *:before,
@@ -55,66 +60,118 @@ ul {
 	-moz-box-sizing:border-box;
 	box-sizing:border-box;
 }*/
+#header {
+    padding-bottom: 0.5em;
+}
 #header h1 {
-	text-align: center;
-	color: #fff;
+    text-align: center;
+    color: #fff;
+    margin: 0;
+    display: inline-block;
+    font-size: 1.5em;
+    line-height: 2em;
+}
+#header img {
+    border-radius: 50%;
+    width: 3em;
+    float: left;
+    margin-right: 1em;
+}
+#main-panel {
+    clear: both;
+    display: flex;
 }
 #year-slider {
-	width: 50%;
+    width: 50%;
 }
 #geo-map {
-	padding: 0.5em;
+    padding: 0.5em;
 }
 .title {
-	text-align: center;
-	background-color: #56a0d3;
-	color: #fff;
-	border-radius: 1em;
-	padding: 0.4em;
-	font-size: 1rem;
+    text-align: center;
+    background-color: #56a0d3;
+    color: #fff;
+    border-radius: 1em;
+    padding: 0.2em;
+    font-size: 1rem;
+    margin: 0;
 }
-.geo-flex-container, .chart-flex-container {
-	display: flex;	
+.geo-flex-container, .chart-flex-container, .control-panel {
+    display: flex;
 }
-.geo-flex-container, .charts-panel {
-	padding: 1em;
-	background-color: #fff;
-	margin: 0.5em;
+.chart-flex-container {
+    flex-direction: column;
+}
+.geo-flex-container {
+    margin-right: 0.5em;
+    flex-direction: column;
+    background-color: #fff;
+    flex: 2;
+}
+.charts-panel {
+    flex: 1;
+    background-color: #fff;
 }
 .geo-map-panel, #chart-tabs {
-	flex:3;
-	margin: 0.5em;
+    flex:3;
+    margin: 0.5em;
 }
-.control-panel, #tab-controls {
-	flex: 1;
-	margin: 0.5em;
+.control-panel, #tab-panel, #comp-panel  {
+    flex: 1;
+    margin: 0.5em 0.5em 0 0.5em;
 }
-#state-set, #tab-controls fieldset {
-	border: 0;
+.state-selection {
+    flex: 1;
+    margin-right: 0.5em;
 }
-#state-set label, #tab-controls label, #subgroups label{
-	display: block;
-    width: 80%;
+.demo-selection {
+    flex: 2;
+}
+#state-set, #tab-panel fieldset {
+    border: 0;
+    padding-bottom: 0;
+}
+#state-set label, #tab-panel label, #subgroups label{
     margin-bottom: 0.2em;
     text-align: left;
+    font-size: 0.7em;
 }
-.demo-form, #subgroups {
-	margin:0.2em;
+#tab-panel label {
+    width: 40%;
+}
+#state-set label {
+    display: block;
+}
+.demo-group, #subgroups {
+    margin:0.2em;
+    flex: 1;
+}
+#subgroups legend {
+    font-size: 0.7em;
 }
 #comp-result {
-	margin-bottom: 1em;
+    margin-bottom: 1em;
 }
 .bar rect:hover {
-	fill-opacity: 1;
+    fill-opacity: 1;
 }
 .bar-other rect:hover {
-	fill: #666666;
+    fill: #666666;
 }
 .states {
-	fill: none;
-	stroke: #fff;
-	stroke-linejoin: round;
+    fill: none;
+    stroke: #fff;
+    stroke-linejoin: round;
 }
-.ui-tabs .ui-tabs-nav {
-	font-size: 0.9em;
+.ui-tabs .ui-tabs-nav li {
+    width: 32%;
+    overflow: hidden;
+    font-size: 0.9em;
+    white-space: normal;
+}
+.ui-tabs .ui-tabs-nav li a {
+    padding: 0.2em 0.3em;
+}
+#tabs-1, #tabs-2, #tabs-3 {
+    padding: 0.2em 0.5em;
 }
