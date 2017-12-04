@@ -168,6 +168,7 @@ ul {
     overflow: hidden;
     font-size: 0.9em;
     white-space: normal;
+    height: 4.5em;
 }
 .ui-tabs .ui-tabs-nav li a {
     padding: 0.2em 0.3em;
