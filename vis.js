@@ -170,6 +170,8 @@ var width_line, height_line;
 var svg_trend_tab_1, svg_trend_tab_2, svg_trend_tab_3;
 var min_line = [];
 var max_line = [];
+var min_box = [];
+var max_box = [];
 var clip_id = 0;
 
 //initialize line chart, default first tab
@@ -199,6 +201,8 @@ function initVisLineChart(_full_data) {
         }
         min_line[i] = d3.min(dataset, function(d) {return d3.mean(d);});
         max_line[i] = d3.max(dataset, function(d) {return d3.mean(d);});
+        min_box[i] = d3.min(dataset, function(d) {return d3.min(d);});
+        max_box[i] = d3.max(dataset, function(d) {return d3.max(d);});
         if(i===0 || i===2) {
             min_line[i] = min_line[i]*0.9;
             max_line[i] = max_line[i]*1.1;
@@ -213,29 +217,17 @@ function initVisLineChart(_full_data) {
             .attr("height", height_line);
 
         var x = d3.scaleLinear()
-            .domain([2011, d3.max(years)])
+            .domain([2010.8, d3.max(years)])
             .range([0, width_line - margin_trend.left - margin_trend.right]);
-
-        var y = d3.scaleLinear()
-            .domain([min_line[i], max_line[i]])
-            .range([height_line - margin_trend.top - margin_trend.bottom, 0]);
 
         //add axises
         var xAxis = this["svg_trend_tab_"+(i+1)].append('g')
-            .attr('class', 'axis')
+            .attr('class', 'x-axis')
             .attr('transform', 'translate(' + margin_trend.left + ',' + (height_line - margin_trend.bottom) + ')');
         if(i === 1) {
             xAxis.call(d3.axisBottom(x).ticks(5).tickFormat(d3.format("d")));
         } else {
             xAxis.call(d3.axisBottom(x).ticks(6).tickFormat(d3.format("d")));
-        }
-        var yAxis = this["svg_trend_tab_"+(i+1)].append('g')
-            .attr('class', 'axis')
-            .attr('transform', 'translate(' + margin_trend.left + ',' + margin_trend.top + ')');
-        if(i === 0) {
-            yAxis.call(d3.axisLeft(y).ticks(6).tickFormat(d3.format("d")));
-        } else {
-            yAxis.call(d3.axisLeft(y).ticks(8).tickFormat(d3.format(".0%")));
         }
 
         //add legend
@@ -391,8 +383,8 @@ var compare = function (event, ui) {
             .on("mouseover", tip_comp_1.show)
             .on("mouseout", tip_comp_1.hide)
             .transition()
-                .duration(500)
-                .attr("transform", function(d){return "translate("+x(d.x0)+",0)"; });
+            .duration(500)
+            .attr("transform", function(d){return "translate("+x(d.x0)+",0)"; });
     }
 
     //selected bar
@@ -409,8 +401,8 @@ var compare = function (event, ui) {
         .on("mouseover", tip_comp_2.show)
         .on("mouseout", tip_comp_2.hide)
         .transition()
-            .duration(500)
-            .attr("transform", function(d){return "translate("+x(d.x0)+",0)"; });
+        .duration(500)
+        .attr("transform", function(d){return "translate("+x(d.x0)+",0)"; });
 
     //show compare result
     if(data_other[0].length !== 0) {
@@ -449,36 +441,28 @@ var trend = function (event, ui) { //initialize the svg as needed
     var vis_option = getSelectedVis();
     var years = (current_tab === 1)? [2011, 2012, 2013, 2014, 2015]:[2011, 2012, 2013, 2014, 2015, 2016];
 
+    //refresh svg
+    $(".box").remove();
+    $(".trend-y-axis").remove();
+    if(vis_option === "distribution") {
+        $(".line").remove();
+        $(".dot_selected").remove();
+        $(".dot_others").remove();
+    }
+
     //plot the line chart to the right svg
     switch(current_tab) {
         case 0:
-            if(vis_option === "distribution") {
-                $("#line_chart").remove();
-                $(".dot_selected").remove();
-                drawDis(full_data, years, states, current_tab, svg_trend_tab_1);
-
-            }
+            if(vis_option === "distribution") drawDis(full_data, years, states, current_tab, svg_trend_tab_1);
             else drawTrend(full_data, years, states, current_tab, svg_trend_tab_1); break;
         case 1:
-            if(vis_option === "distribution") {
-                $("#line_chart").remove();
-                $(".dot_selected").remove();
-                drawDis(full_data, years, states, current_tab, svg_trend_tab_2);
-
-            }
+            if(vis_option === "distribution") drawDis(full_data, years, states, current_tab, svg_trend_tab_2);
             else drawTrend(full_data, years, states, current_tab, svg_trend_tab_2); break;
         case 2:
-            if(vis_option === "distribution") {
-                $("#line_chart").remove();
-                $(".dot_selected").remove();
-                drawDis(full_data, years, states, current_tab, svg_trend_tab_3);
-
-            }
+            if(vis_option === "distribution") drawDis(full_data, years, states, current_tab, svg_trend_tab_3);
             else drawTrend(full_data, years, states, current_tab, svg_trend_tab_3); break;
     }
-    //put it here
 };
-
 
 var drawTrend = function(_full_data, _years, _states, _current_tab, _svg) {
     //get dataset
@@ -487,8 +471,6 @@ var drawTrend = function(_full_data, _years, _states, _current_tab, _svg) {
     var dataset = datasetByTab(_current_tab, _years, filtered_data, other_data);
     var data_selected = dataset.data_selected;
     var data_other = dataset.data_other;
-    //console.log(data_selected);
-
 
     //calculate the average for line chart
     var data_selected_avg = data_selected.map(function (d) {return d3.mean(d);});
@@ -512,12 +494,22 @@ var drawTrend = function(_full_data, _years, _states, _current_tab, _svg) {
     _svg.selectAll("#legend-text"+(_current_tab+1)).text("Selected States: " + getSelectedStatesLabel());
 
     var x = d3.scaleLinear()
-        .domain([2011, d3.max(_years)])
+        .domain([2010.8, d3.max(_years)])
         .range([0, width_line - margin_trend.left - margin_trend.right]);
 
     var y = d3.scaleLinear()
         .domain([min_line[_current_tab], max_line[_current_tab]])
         .range([height_line - margin_trend.top - margin_trend.bottom, 0]);
+
+    //adjust y axis
+    var yAxis = _svg.append('g')
+        .attr('class', 'trend-y-axis')
+        .attr('transform', 'translate(' + margin_trend.left + ',' + margin_trend.top + ')');
+    if(_current_tab === 0) {
+        yAxis.call(d3.axisLeft(y).ticks(6).tickFormat(d3.format("d")));
+    } else {
+        yAxis.call(d3.axisLeft(y).ticks(8).tickFormat(d3.format(".1%")));
+    }
 
     // define the line
     var values = d3.line()
@@ -529,14 +521,14 @@ var drawTrend = function(_full_data, _years, _states, _current_tab, _svg) {
     _svg.append("clipPath")
         .attr("id", "clipper"+clip_id)
         .append("rect")
-        .attr("id", "clip-rect"+clip_id)
+        .attr("class", "clip-rect") //.attr("id", "clip-rect"+clip_id)
         .attr("x", 0)
         .attr("y", 0)
         .attr("height", height_line)
         .attr("width", 0);
 
     var line_chart = _svg.selectAll(".line").data(trend_data);
-    line_chart.attr("clip-path", "url(#clipper"+clip_id+")");
+    //line_chart.attr("clip-path", "url(#clipper"+clip_id+")");
 
     line_chart.exit()
         .remove();
@@ -544,18 +536,18 @@ var drawTrend = function(_full_data, _years, _states, _current_tab, _svg) {
     line_chart.enter()
         .append('path')
         .merge(line_chart)
-            .attr('class', 'line')
-            .attr('transform', 'translate(' + margin_trend.left + ',' + margin_trend.top + ')')
-            .attr('d', function(d){return values(d);})
-            .attr('fill', 'none')
-            .attr('stroke-width', 3)
-            .attr('stroke', function(d, i) {return color[i]})
-            .attr("id", "line_chart");
+        .attr('class', 'line')
+        .attr('transform', 'translate(' + margin_trend.left + ',' + margin_trend.top + ')')
+        .attr('d', function(d){return values(d);})
+        .attr('fill', 'none')
+        .attr('stroke-width', 3)
+        .attr('stroke', function(d, i) {return color[i]})
+        .attr("clip-path", "url(#clipper"+clip_id+")");
 
-    _svg.select("#clip-rect"+clip_id)
+    _svg.selectAll(".clip-rect") //.select("#clip-rect"+clip_id)
         .attr("width", 0)
         .transition()
-            .duration(1500)
+        .duration(1500)
             .attr("width", width_line);
     clip_id++;
 
@@ -568,28 +560,28 @@ var drawTrend = function(_full_data, _years, _states, _current_tab, _svg) {
     dots_selected.enter()
         .append('circle')
         .merge(dots_selected)
-            .attr('class', 'dot_selected')
-            .attr('r', 5)
-            .attr('transform', 'translate(' + margin_trend.left + ',' + margin_trend.top + ')')
-            .attr('cx', function(d){ return x(d.year);})
-            .attr('cy', function(d){ return y(d.value);})
-            .attr('fill', "#56a0d3")
-            .attr("fill-opacity", 0.8)
-            .on('mouseover', function(d, i){
-                d3.select(this)
-                    .transition()
-                    .attr("fill-opacity", 1)
-                    .attr('r', 10);
-                $("#year-slider").slider( "option", "value", d.year);
-                tip_trend.show(d, i);
-            })
-            .on('mouseout', function(d){
-                d3.select(this)
-                    .transition()
-                    .attr("fill-opacity", 0.8)
-                    .attr('r', 5);
-                tip_trend.hide(d);
-            });
+        .attr('class', 'dot_selected')
+        .attr('r', 5)
+        .attr('transform', 'translate(' + margin_trend.left + ',' + margin_trend.top + ')')
+        .attr('cx', function(d){ return x(d.year);})
+        .attr('cy', function(d){ return y(d.value);})
+        .attr('fill', "#56a0d3")
+        .attr("fill-opacity", 0.8)
+        .on('mouseover', function(d, i){
+            d3.select(this)
+                .transition()
+                .attr("fill-opacity", 1)
+                .attr('r', 10);
+            $("#year-slider").slider( "option", "value", d.year);
+            tip_trend.show(d, i);
+        })
+        .on('mouseout', function(d){
+            d3.select(this)
+                .transition()
+                .attr("fill-opacity", 0.8)
+                .attr('r', 5);
+            tip_trend.hide(d);
+        });
 
 
     if(_states !== 'all-states') {
@@ -599,28 +591,28 @@ var drawTrend = function(_full_data, _years, _states, _current_tab, _svg) {
         dots_others_data.enter()
             .append('circle')
             .merge(dots_others_data)
-                .attr('class', 'dot_others')
-                .attr('r', 5)
-                .attr('transform', 'translate(' + margin_trend.left + ',' + margin_trend.top + ')')
-                .attr('cx', function(d){ return x(d.year);})
-                .attr('cy', function(d){ return y(d.value);})
-                .attr('fill', "#cccccc")
-                .attr("fill-opacity", 0.8)
-                .on('mouseover', function(d, i){
-                    d3.select(this)
-                        .transition()
-                        .attr("fill-opacity", 1)
-                        .attr('r', 10);
-                    $("#year-slider").slider( "option", "value", d.year );
-                    tip_trend.show(d, i);
-                })
-                .on('mouseout', function(d){
-                    d3.select(this)
-                        .transition()
-                        .attr("fill-opacity", 0.8)
-                        .attr('r', 5);
-                    tip_trend.hide(d);
-                });
+            .attr('class', 'dot_others')
+            .attr('r', 5)
+            .attr('transform', 'translate(' + margin_trend.left + ',' + margin_trend.top + ')')
+            .attr('cx', function(d){ return x(d.year);})
+            .attr('cy', function(d){ return y(d.value);})
+            .attr('fill', "#cccccc")
+            .attr("fill-opacity", 0.8)
+            .on('mouseover', function(d, i){
+                d3.select(this)
+                    .transition()
+                    .attr("fill-opacity", 1)
+                    .attr('r', 10);
+                $("#year-slider").slider( "option", "value", d.year );
+                tip_trend.show(d, i);
+            })
+            .on('mouseout', function(d){
+                d3.select(this)
+                    .transition()
+                    .attr("fill-opacity", 0.8)
+                    .attr('r', 5);
+                tip_trend.hide(d);
+            });
     } else {
         dots_others.remove();
     }
@@ -633,7 +625,6 @@ var drawDis = function (_full_data, _years, _states, _current_tab, _svg) {
     var other_data = filterOthers(_full_data, _states);
     var dataset = datasetByTab(_current_tab, _years, filtered_data, other_data);
     var data_selected = dataset.data_selected;
-    //console.log(data_selected);
 
     // prepare data for boxPlot data
     var groupCounts={};
@@ -643,18 +634,12 @@ var drawDis = function (_full_data, _years, _states, _current_tab, _svg) {
         var key =_years[i];
         groupCounts[key]=data_selected[i];
     }
-    //console.log("groupCounts");
-    //console.log(groupCounts);
-    //console.log(globalCounts);
 
     // Sort group counts so quantile methods work
     for(var key in groupCounts) {
         var groupCount = groupCounts[key];
         groupCounts[key] = groupCount.sort(sortNumber);
     }
-
-    //console.log(groupCount);
-   // console.log(groupCounts);
 
     // Prepare the data for the box plots
     var boxPlotData = [];
@@ -672,7 +657,6 @@ var drawDis = function (_full_data, _years, _states, _current_tab, _svg) {
         boxPlotData.push(record);
 
     }
-    console.log(boxPlotData);
 
 // calculate quantitle data
     function boxQuartiles(d) {
@@ -689,27 +673,41 @@ var drawDis = function (_full_data, _years, _states, _current_tab, _svg) {
     }
 
     // Compute an ordinal xScale for the keys in boxPlotData
-    var xScale = d3.scalePoint()
-        .domain(Object.keys(groupCounts))
-        .rangeRound([0, width_line - margin_trend.left - margin_trend.right])
-        .padding([0.5]);
-
-
-    // Compute a global y scale based on the global counts
-    var min1 = data_selected.map(function (d) {return d3.min(d);});
-    var max1 = data_selected.map(function (d) {return d3.max(d);});
-    var min = d3.min(min1);
-    var max = d3.max(max1);
+    var xScale = d3.scaleLinear()
+        .domain([2010.8, d3.max(Object.keys(groupCounts))])
+        .range([-(barWidth/2), width_line - margin_trend.left - margin_trend.right]);
 
     var yScale = d3.scaleLinear()
-        .domain([min, max])
+        .domain([min_box[_current_tab], max_box[_current_tab]])
         .range([height_line - margin_trend.top - margin_trend.bottom,0]);
+
+    //adjust y axis
+    var yAxis = _svg.append('g')
+        .attr('class', 'trend-y-axis')
+        .attr('transform', 'translate(' + margin_trend.left + ',' + margin_trend.top + ')');
+    if(_current_tab === 0) {
+        yAxis.call(d3.axisLeft(yScale).ticks(6).tickFormat(d3.format("d")));
+    } else {
+        yAxis.call(d3.axisLeft(yScale).ticks(8).tickFormat(d3.format(".1%")));
+    }
 
     // Setup the group the box plot elements will render in
     var g = _svg.append("g")
-        .attr("transform", "translate(20,5)");
+        .attr("class", "box")
+        .attr("transform", "translate("+margin_trend.left+","+margin_trend.top+")");
 
-//-------------------------draw--------------------
+    // tooltip for box plot
+    var tip_dis = d3.tip()
+        .attr("class", "d3-tip")
+        .offset([-10, 0])
+        .html(function(d) {
+            if (_current_tab === 0) return "In year"+d.key+", </br>for "+getCurTabTitle()+" of "+getSelectedStatesLabel()+": </br> Mean: "+d.quartile[1]+"</br> Minimum: "+d.whiskers[0]+"</br> Maximum: "+d.whiskers[1];
+            else return "In year"+d.key+", for "+getCurTabTitle()+" of "+getSelectedStatesLabel()+": </br> Mean: "+(d.quartile[1]*100).toFixed(2)+"% </br> Minimum: "+(d.whiskers[0]*100).toFixed(2)+"% </br> Maximum: "+(d.whiskers[1]*100).toFixed(2)+"%";
+        });
+
+    _svg.call(tip_dis);
+
+    //-------------------------draw--------------------
     // Draw the box plot vertical lines
 
     var verticalLines = g.selectAll(".verticalLines").data(boxPlotData);
@@ -719,31 +717,24 @@ var drawDis = function (_full_data, _years, _states, _current_tab, _svg) {
     verticalLines.enter()
         .append("line")
         .merge(verticalLines)
+            .attr("class", "verticalLines")
             .attr("x1", function(datum) {
-                return xScale(datum.key) + barWidth/2;
-            }
-            )
-            .attr("y1", function(datum) {
-                var whisker = datum.whiskers[0];
-                return yScale(whisker);
-            }
+                    return xScale(datum.key) + barWidth/2;
+                }
             )
             .attr("x2", function(datum) {
-                return xScale(datum.key) + barWidth/2;
-            }
-            )
-            .attr("y2", function(datum) {
-                var whisker = datum.whiskers[1];
-                return yScale(whisker);
-            }
+                    return xScale(datum.key) + barWidth/2;
+                }
             )
             .attr("stroke", "#000")
             .attr("stroke-width", 1)
-            .attr("fill", "none");
-
-
-   // g.selectAll(".verticalLines").exit().remove();
-
+            .attr("fill", "none")
+            .attr("y1", function(datum) { return yScale(datum.quartile[1]);})
+            .attr("y2", function(datum) { return yScale(datum.quartile[1]);})
+            .transition()
+            .duration(500)
+                .attr("y1", function(datum) { return yScale(datum.whiskers[0]);})
+                .attr("y2", function(datum) { return yScale(datum.whiskers[1]);});
 
     // Draw the boxes of the box plot, filled in white and on top of vertical lines
     // 加一个，鼠标在方块上会出现文字，年份，max,min
@@ -754,13 +745,6 @@ var drawDis = function (_full_data, _years, _states, _current_tab, _svg) {
 
     rects.enter()
         .append("rect")
-        .attr("width", barWidth)
-        .attr("height", function(datum) {
-                var quartiles = datum.quartile;
-                var height = yScale(quartiles[0]) - yScale(quartiles[2]);
-                return height;
-            }
-        )
         .attr("x", function(datum) {
                 return xScale(datum.key);
             }
@@ -769,11 +753,33 @@ var drawDis = function (_full_data, _years, _states, _current_tab, _svg) {
                 return yScale(datum.quartile[2]);
             }
         )
+        .attr("width", barWidth)
+        .attr("height", 0)
         .attr('fill', "#56a0d3")
         .attr("stroke", "#000")
-        .attr("stroke-width", 1);
-
-    //g.selectAll("rect").exit().remove();
+        .attr("stroke-width", 1)
+        .attr("fill-opacity", 0.8)
+        .on('mouseover', function(d, i){
+            d3.select(this)
+                .transition()
+                .attr("fill-opacity", 1);
+            $("#year-slider").slider( "option", "value", d.key);
+            tip_dis.show(d, i);
+        })
+        .on('mouseout', function(d){
+            d3.select(this)
+                .transition()
+                .attr("fill-opacity", 0.8);
+            tip_dis.hide(d);
+        })
+        .transition()
+        .duration(500)
+            .attr("height", function(datum) {
+                    var quartiles = datum.quartile;
+                    var height = yScale(quartiles[0]) - yScale(quartiles[2]);
+                    return height;
+                }
+            );
 
     // Now render all the horizontal lines at once - the whiskers and the median
     var horizontalLineConfigs = [
@@ -804,22 +810,24 @@ var drawDis = function (_full_data, _years, _states, _current_tab, _svg) {
         var lineConfig = horizontalLineConfigs[i];
 
         // Draw the whiskers at the min for this series
-        var horizontalLine = g.selectAll(".whiskers").data(boxPlotData);
+        var horizontalLine = g.selectAll(".whiskers"+i).data(boxPlotData);
 
         horizontalLine.exit().remove();
 
         horizontalLine.enter()
             .append("line")
             .merge(horizontalLine)
-            .attr("x1", lineConfig.x1)
-            .attr("y2", lineConfig.y1)
-            .attr("x2", lineConfig.x2)
-            .attr("y1", lineConfig.y2)
-            .attr("stroke", "#000")
-            .attr("stroke-width", 1)
-            .attr("fill", "none");
-
-        //g.selectAll(".whiskers").exit().remove();
-
+                .attr("class", "whiskers"+i)
+                .attr("x1", lineConfig.x1)
+                .attr("x2", lineConfig.x2)
+                .attr("y1", function(datum){ return yScale(datum.quartile[1]);})
+                .attr("y2", function(datum){ return yScale(datum.quartile[1]);})
+                .attr("stroke", "#000")
+                .attr("stroke-width", 1)
+                .attr("fill", "none")
+                .transition()
+                .duration(500)
+                    .attr("y2", lineConfig.y1)
+                    .attr("y1", lineConfig.y2);
     }
-}
+};

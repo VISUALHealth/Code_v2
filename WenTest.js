@@ -57,8 +57,6 @@ function initVisMap() {
             .append("path")
             .attr("d", path)
             .style("fill", function(d){return fill(d)});
-
-        console.log(us.objects.states.id)
     });
 
 

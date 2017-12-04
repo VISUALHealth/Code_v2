@@ -23,11 +23,12 @@ p {
 }
 /*tool tip style*/
 .d3-tip {
-    line-height: 1;
     padding: 12px;
     background: rgba(0, 0, 0, 0.8);
     color: #fff;
     border-radius: 2px;
+    font-size: 0.8em;
+    line-height: 1.2em;
 }
 
 /* Creates a small triangle extender for the tooltip */
