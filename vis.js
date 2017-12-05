@@ -28,7 +28,7 @@ function getPremiumIncrease(_full_data, _years) {
     for (i = 0; i<_years.length && _years[0]<2016; i++) {
         var data = _full_data.map(function(d){
             var premium_inc_1  = d[_years[i]+"_Employee_Contribution"] + d[_years[i]+"_Deductible"];
-            var premium_inc_2  = d[(_years[i]+1)+"_Employee_Contribution"] + d[(_years[i]+1)+"_Deductible"];
+            var premium_inc_2  = d[(parseFloat(_years[i])+1)+"_Employee_Contribution"] + d[(parseFloat(_years[i])+1)+"_Deductible"];
             return parseFloat((premium_inc_2-premium_inc_1)/premium_inc_1);
         });
         dataset.push(data);
