@@ -64,6 +64,36 @@ function getSelectedStatesLabel() {
         default: return "All states";
     }
 }
+//get subgroup info
+function getSub(year, d){
+    var subgroup = $("#demgraphic").val();
+    var results = [];
+    var prefix = String(year)+"_Uninsured";
+    switch(subgroup){
+        case "race":
+            if($("#white").is(":checked")){var prefixed=prefix+"_White"; var temp={};temp.id = prefixed;temp.val=d[prefixed];results.push(temp);}
+            if($("#black").is(":checked")){var prefixed=prefix+"_Black"; var temp={};temp.id = prefixed;temp.val=d[prefixed];results.push(temp);}
+            if($("#asian").is(":checked")){var prefixed=prefix+"_Asian"; var temp={};temp.id = prefixed;temp.val=d[prefixed];results.push(temp);}
+            if($("#hawaiian").is(":checked")){var prefixed=prefix+"_Hawaiian"; var temp={};temp.id = prefixed;temp.val=d[prefixed];results.push(temp);}
+            if($("#multirace").is(":checked")){var prefixed=prefix+"_MultiRace";var temp={}; temp.id = prefixed;temp.val=d[prefixed];results.push(temp);}
+            if($("#other").is(":checked")){var prefixed=prefix+"_OtherRace"; var temp={};temp.id = prefixed;temp.val=d[prefixed];results.push(temp);}
+            break;
+        case "income":
+            if($("#Total_Inc25000").is(":checked")){var prefixed=prefix+"_Inc25000"; var temp={};temp.id = prefixed;temp.val=d[prefixed];results.push(temp);}
+            if($("#Total_Inc50000").is(":checked")){var prefixed=prefix+"_Inc50000"; var temp={};temp.id = prefixed;temp.val=d[prefixed];results.push(temp);}
+            if($("#Total_Inc75000").is(":checked")){var prefixed=prefix+"_Inc75000"; var temp={};temp.id = prefixed;temp.val=d[prefixed];results.push(temp);}
+            if($("#Total_Inc100000").is(":checked")){var prefixed=prefix+"_Inc100000"; var temp={};temp.id = prefixed;temp.val=d[prefixed];results.push(temp);}
+            if($("#Total_Inc999999").is(":checked")){var prefixed=prefix+"_Inc999999"; var temp={};temp.id = prefixed;temp.val=d[prefixed];results.push(temp);}
+            break;
+        case "age":
+            if($("#Total_Age18").is(":checked")){var prefixed=prefix+"_Age18";var temp={}; temp.id = prefixed;temp.val=d[prefixed];results.push(temp);}
+            if($("#Total_Age18-64").is(":checked")){var prefixed=prefix+"_Age18-64";var temp={}; temp.id = prefixed;temp.val=d[prefixed];results.push(temp);}
+            if($("#Total_Age65").is(":checked")){var prefixed=prefix+"_Age65";var temp={}; temp.id = prefixed;temp.val=d[prefixed];results.push(temp);}
+            break;
+        default:break;
+    }
+    return results;
+}
 //get checked visualization option
 function getSelectedVis() {
     return $("#visual-option input[name='tab-viz-option']:checked").val();
@@ -480,6 +510,18 @@ var map_refresh = function(event,ui){
         var pop = String(year)+"_Total_population";
         var uninsured = d[uni];
         var population = d[pop];
+
+        //subgroup stuff yikes
+        var subgroup_res = getSub(year,d);//return results {[prefix]:uninsured_rate}
+        console.log(subgroup_res);
+        if(subgroup_res.length!=0){
+            uninsured = 0;
+            for(var x in subgroup_res){
+                uninsured+=subgroup_res[x].val;
+            }
+        }
+        console.log("new uninsured ");
+        console.log(uninsured);
         var uninsured_rate = uninsured/population;
         var temp = {};
         temp.id = d.id;
@@ -526,7 +568,7 @@ var map_refresh = function(event,ui){
         .transition()
         .duration(800)
         .attr("opacity",0.1)
-        .attr("stroke","white");
+        //.attr("stroke","grey");
 
     pathes
         .transition()

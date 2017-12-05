@@ -209,6 +209,24 @@
         // visualization option
         $("#visual-option input").on("click", {dataset: full_data}, trend);
 
+        // subgroup radiobox playaround
+        $("#white").on("change",{dataset: full_data}, map_refresh);
+        $("#black").on("change",{dataset: full_data}, map_refresh);
+        $("#asian").on("change",{dataset: full_data}, map_refresh);
+        $("#hawaiian").on("change",{dataset: full_data}, map_refresh);
+        $("#multirace").on("change",{dataset: full_data}, map_refresh);
+        $("#other").on("change",{dataset: full_data}, map_refresh);
+        $("#Total_Age18").on("change",{dataset: full_data}, map_refresh);
+        $("#Total_Age18-64").on("change",{dataset: full_data}, map_refresh);
+        $("#Total_Age65").on("change",{dataset: full_data}, map_refresh);
+        $("#Total_Inc25000").on("change",{dataset: full_data}, map_refresh);
+        $("#Total_Inc50000").on("change",{dataset: full_data}, map_refresh);
+        $("#Total_Inc75000").on("change",{dataset: full_data}, map_refresh);
+        $("#Total_Inc100000").on("change",{dataset: full_data}, map_refresh);
+        $("#Total_Inc999999").on("change",{dataset: full_data}, map_refresh);
+
+
+
     });
 </script>
 </body>
