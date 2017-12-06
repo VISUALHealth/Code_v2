@@ -213,6 +213,9 @@ function state_color(flag, num){
 var margin_comp = {top: 40, right: 10, left: 10, bottom: 40};
 var margin_trend = {top: 30, right: 15, left: 40, bottom: 20};
 var svg_comp;
+var original_select_comp;
+var original_other_comp;
+var original_states;
 //create svg for line chart panel
 var width_line, height_line;
 var svg_trend_tab_1, svg_trend_tab_2, svg_trend_tab_3;
@@ -221,6 +224,14 @@ var max_line = [];
 var min_box = [];
 var max_box = [];
 var clip_id = 0;
+
+//initialize histogram chart
+function initComp(_full_data) {
+    var dataset = datasetByTab(0, [2016], _full_data, []);
+    original_select_comp = dataset.data_selected;
+    original_other_comp = dataset.data_other;
+    original_states = getSelectedStates();
+}
 
 //initialize line chart, default first tab
 function initVisLineChart(_full_data) {
@@ -335,10 +346,30 @@ var compare = function (event, ui) {
     var height_comp = width_comp*0.6;
     var bin_count = 6;
 
+    //set up x, y mapping and bins of the histogram, because each interaction the dataset(domain) will be changed
+    //set up new x scale based on new data
     var x = d3.scaleLinear()
         .domain([min_data, max_data])
         .rangeRound([margin_comp.left, width_comp-margin_comp.right]);
 
+    //put original data into bins
+    var original_bins_selected = d3.histogram()
+        .domain(x.domain())
+        .thresholds(d3.range(min_data, max_data, (max_data - min_data)/bin_count))
+        (original_select_comp[0]);
+
+    var original_total_selected = original_select_comp[0].length;
+
+    var original_bins_other = d3.histogram()
+        .domain(x.domain())
+        .thresholds(d3.range(min_data, max_data, (max_data - min_data)/bin_count))
+        (original_other_comp[0]);
+
+    var original_total_other = original_other_comp[0].length;
+
+    var y_original_height = d3.max([d3.max(original_bins_selected, function(d){ return d.length/original_total_selected}),d3.max(original_bins_other, function(d){ return d.length/original_total_other})]);
+
+    //put new data into bins
     var bins_selected = d3.histogram()
         .domain(x.domain())
         .thresholds(d3.range(min_data, max_data, (max_data - min_data)/bin_count))
@@ -351,10 +382,15 @@ var compare = function (event, ui) {
 
     var y_height = d3.max([d3.max(bins_selected, function(d){ return d.length/data_selected[0].length}),d3.max(bins_other, function(d){ return d.length/data_other[0].length})]);
 
+    //set up y scale mapping
     var y = d3.scaleLinear()
-        .domain([0, y_height])
+        .domain([0, d3.max([y_original_height,y_height])])
         .range([height_comp-margin_comp.bottom, margin_comp.top]);
 
+    var combined_selected_bins = d3.zip(bins_selected, original_bins_selected);
+    var combined_other_bins = d3.zip(bins_other,original_bins_other);
+
+    //append svg
     svg_comp = d3.select("#tab-comparison")
         .append("svg")
         .attr("id", "comp-svg")
@@ -403,14 +439,14 @@ var compare = function (event, ui) {
         .attr("class", "d3-tip")
         .offset([-10, 0])
         .html(function(d) {
-            return "<strong>Number of States: </strong>"+d.length+"<br><strong>Percentage: </strong>"+(d.length/data_other[0].length*100).toFixed(2)+"%"+"<br><Strong>Max: </Strong>"+d.x1.toFixed(2)+"<br><Strong>Min: </Strong>"+d.x0.toFixed(2);
+            return "<strong>Number of States: </strong>"+d[1].length+"<br><strong>Percentage: </strong>"+(d[1].length/data_other[0].length*100).toFixed(2)+"%"+"<br><Strong>Max: </Strong>"+d[1].x1.toFixed(2)+"<br><Strong>Min: </Strong>"+d[1].x0.toFixed(2);
         });
 
     var tip_comp_2 = d3.tip()
         .attr("class", "d3-tip")
         .offset([-10, 0])
         .html(function(d) {
-            return "<strong>Number of States: </strong>"+d.length+"<br><strong>Percentage: </strong>"+(d.length/data_selected[0].length*100).toFixed(2)+"%"+"<br><Strong>Max: </Strong>"+d.x1.toFixed(2)+"<br><Strong>Min: </Strong>"+d.x0.toFixed(2);
+            return "<strong>Number of States: </strong>"+d[1].length+"<br><strong>Percentage: </strong>"+(d[1].length/data_selected[0].length*100).toFixed(2)+"%"+"<br><Strong>Max: </Strong>"+d[1].x1.toFixed(2)+"<br><Strong>Min: </Strong>"+d[1].x0.toFixed(2);
         });
 
     svg_comp.call(tip_comp_1);
@@ -418,44 +454,79 @@ var compare = function (event, ui) {
 
     //others bar
     if (data_other[0].length !== 0) {
-        var bar_other = svg_comp.selectAll(".bar-other").data(bins_other);
-        bar_other.enter().append("g")
-            .attr("class", "bar-other")
-            .attr("transform", function(d){return "translate(0,"+y(d.length/data_other[0].length)+")";})
-            .append("rect")
-            .attr("x", 3)
-            .attr("width", (x(bins_other[0].x1) - x(bins_other[0].x0) - 3))
-            .attr("height", function(d) { return height_comp-margin_comp.bottom - y(d.length/data_other[0].length); })
-            .attr("fill", function(d) { return "#cccccc"; }) //#286c9b
-            .attr("fill-opacity", 0.8)
-            .on("mouseover", tip_comp_1.show)
-            .on("mouseout", tip_comp_1.hide)
-            .transition()
-            .duration(500)
-            .attr("transform", function(d){return "translate("+x(d.x0)+",0)"; });
+        var bar_other = svg_comp.selectAll(".bar-other").data(combined_other_bins).enter().append("g").attr("class", "bar-other");
+        if(states === original_states) {
+            bar_other.attr("transform", function(d){ return "translate("+x(d[0].x0)+", "+y(d[1].length/original_total_other)+")";})
+                .append("rect")
+                .attr("x", 3)
+                .attr("width", (x(bins_other[0].x1) - x(bins_other[0].x0) - 3))
+                .attr("height", function(d) { return height_comp-margin_comp.bottom - y(d[1].length/original_total_other); })
+                .attr("fill", "#cccccc") //#286c9b
+                .attr("fill-opacity", 0.8)
+                .on("mouseover", tip_comp_1.show)
+                .on("mouseout", tip_comp_1.hide)
+                .transition()
+                    .duration(500)
+                    .attr("transform", function(d){return "translate(0, "+(y(d[0].length/original_total_other)-y(d[1].length/data_other[0].length))+")";})
+                    .attr("height", function(d) { return height_comp-margin_comp.bottom - y(d[0].length/data_other[0].length); });
+        } else {
+            bar_other.attr("transform", function(d){return "translate("+x(d[0].x0)+", "+(height_comp-margin_comp.bottom)+")";})
+                .append("rect")
+                .attr("x", 3)
+                .attr("width", (x(bins_other[0].x1) - x(bins_other[0].x0) - 3))
+                .attr("height", 0)
+                .attr("fill", "#cccccc") //#286c9b
+                .attr("fill-opacity", 0.8)
+                .on("mouseover", tip_comp_1.show)
+                .on("mouseout", tip_comp_1.hide)
+                .transition()
+                    .duration(500)
+                    .attr("transform", function(d){return "translate(0, "+(-height_comp+margin_comp.bottom+y(d[0].length/data_other[0].length))+")";})
+                    .attr("height", function(d) { return height_comp-margin_comp.bottom - y(d[0].length/data_other[0].length); });
+        }
     }
 
     //selected bar
-    var bar = svg_comp.selectAll(".bar").data(bins_selected);
-    bar.enter().append("g")
-        .attr("class", "bar")
-        .attr("transform", function(d){return "translate(0,"+y(d.length/data_selected[0].length)+")";})
-        .append("rect")
-        .attr("x", 3)
-        .attr("width", (x(bins_selected[0].x1) - x(bins_selected[0].x0) - 3))
-        .attr("height", function(d) { return height_comp-margin_comp.bottom - y(d.length/data_selected[0].length); })
-        .attr("fill", function(d) { return "#56a0d3"; })
-        .attr("fill-opacity", 0.6)
-        .on("mouseover", tip_comp_2.show)
-        .on("mouseout", tip_comp_2.hide)
-        .transition()
-        .duration(500)
-        .attr("transform", function(d){return "translate("+x(d.x0)+",0)"; });
+    var bar = svg_comp.selectAll(".bar").data(combined_selected_bins).enter().append("g").attr("class", "bar");
+    if(states === original_states) {
+        bar.attr("transform", function(d){ return "translate("+x(d[0].x0)+", "+y(d[1].length/original_total_selected)+")";})
+            .append("rect")
+            .attr("x", 3)
+            .attr("width", (x(bins_selected[0].x1) - x(bins_selected[0].x0) - 3))
+            .attr("height", function(d) { return height_comp-margin_comp.bottom - y(d[1].length/original_total_selected); })
+            .attr("fill", "#56a0d3")
+            .attr("fill-opacity", 0.6)
+            .on("mouseover", tip_comp_2.show)
+            .on("mouseout", tip_comp_2.hide)
+            .transition()
+                .duration(500)
+                .attr("transform", function(d){return "translate(0, "+(y(d[0].length/original_total_selected)-y(d[1].length/data_selected[0].length))+")";})
+                .attr("height", function(d) { return height_comp-margin_comp.bottom - y(d[0].length/data_selected[0].length); });
+    } else {
+        bar.attr("transform", function(d){return "translate("+x(d[0].x0)+", "+(height_comp-margin_comp.bottom)+")";})
+            .append("rect")
+            .attr("x", 3)
+            .attr("width", (x(bins_selected[0].x1) - x(bins_selected[0].x0) - 3))
+            .attr("height", 0)
+            .attr("fill", "#56a0d3")
+            .attr("fill-opacity", 0.6)
+            .on("mouseover", tip_comp_2.show)
+            .on("mouseout", tip_comp_2.hide)
+            .transition()
+                .duration(500)
+                .attr("transform", function(d){return "translate(0, "+(-height_comp+margin_comp.bottom+y(d[0].length/data_selected[0].length))+")";})
+                .attr("height", function(d) { return height_comp-margin_comp.bottom - y(d[0].length/data_selected[0].length); });
+    }
 
     //show compare result
     if(data_other[0].length !== 0) {
         tTest(data_selected[0], data_other[0]);
     }
+
+    //update original data
+    original_select_comp = data_selected;
+    original_other_comp = data_other;
+    original_states = states;
 };
 
 // t test
@@ -728,15 +799,19 @@ var drawTrend = function(_full_data, _years, _states, _current_tab, _svg) {
             d3.select(this)
                 .transition()
                 .attr("fill-opacity", 1)
-                .attr('r', 10);
-            $("#year-slider").slider( "option", "value", d.year);
+                .attr('r', 10)
+                .style('cursor', 'pointer');
             tip_trend.show(d, i);
+        })
+        .on('click', function(d){
+            $("#year-slider").slider( "option", "value", d.year);
         })
         .on('mouseout', function(d){
             d3.select(this)
                 .transition()
                 .attr("fill-opacity", 0.8)
-                .attr('r', 5);
+                .attr('r', 5)
+                .style('cursor', 'auto');
             tip_trend.hide(d);
         });
 
@@ -759,15 +834,19 @@ var drawTrend = function(_full_data, _years, _states, _current_tab, _svg) {
                 d3.select(this)
                     .transition()
                     .attr("fill-opacity", 1)
-                    .attr('r', 10);
-                $("#year-slider").slider( "option", "value", d.year );
+                    .attr('r', 10)
+                    .style('cursor', 'pointer');
                 tip_trend.show(d, i);
+            })
+            .on('click', function(d){
+                $("#year-slider").slider( "option", "value", d.year);
             })
             .on('mouseout', function(d){
                 d3.select(this)
                     .transition()
                     .attr("fill-opacity", 0.8)
-                    .attr('r', 5);
+                    .attr('r', 5)
+                    .style('cursor', 'auto');
                 tip_trend.hide(d);
             });
     } else {
@@ -919,14 +998,18 @@ var drawDis = function (_full_data, _years, _states, _current_tab, _svg) {
         .on('mouseover', function(d, i){
             d3.select(this)
                 .transition()
-                .attr("fill-opacity", 1);
-            $("#year-slider").slider( "option", "value", d.key);
+                .attr("fill-opacity", 1)
+                .style('cursor', 'pointer');
             tip_dis.show(d, i);
+        })
+        .on('click', function(d){
+            $("#year-slider").slider( "option", "value", d.key);
         })
         .on('mouseout', function(d){
             d3.select(this)
                 .transition()
-                .attr("fill-opacity", 0.8);
+                .attr("fill-opacity", 0.8)
+                .style('cursor', 'auto');
             tip_dis.hide(d);
         })
         .transition()
