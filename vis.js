@@ -584,15 +584,15 @@ var map_refresh = function(event,ui){
 
         //subgroup stuff yikes
         var subgroup_res = getSub(year,d);//return results {[prefix]:uninsured_rate}
-        console.log(subgroup_res);
+        //console.log(subgroup_res);
         if(subgroup_res.length!=0){
             uninsured = 0;
             for(var x in subgroup_res){
                 uninsured+=subgroup_res[x].val;
             }
         }
-        console.log("new uninsured ");
-        console.log(uninsured);
+        //console.log("new uninsured ");
+        //console.log(uninsured);
         var uninsured_rate = uninsured/population;
         var temp = {};
         temp.id = d.id;
@@ -638,7 +638,7 @@ var map_refresh = function(event,ui){
     pathes.exit()
         .transition()
         .duration(800)
-        .attr("opacity",0.1)
+        .attr("opacity",0.1);
         //.attr("stroke","grey");
 
     pathes

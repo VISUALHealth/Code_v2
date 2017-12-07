@@ -166,18 +166,22 @@
                     case "race":
                         subgroups.html('<fieldset><legend>Select Subgroup(s)</legend> <label for="white">White</label> <input id="white" name="white" type="checkbox"> <label for="black">Black</label> <input id="black" name="black" type="checkbox"> <label for="asian">Asian</label> <input id="asian" name="asian" type="checkbox"> <label for="hawaiian">Hawaiian</label> <input id="hawaiian" name="hawaiian" type="checkbox"> <label for="multirace">Multirace</label> <input id="multirace" name="multirace" type="checkbox"> <label for="other">Other</label> <input id="other" name="other" type="checkbox"></fieldset>');
                         $("#subgroups input").checkboxradio();
+                        $("#white, #black, #asian, #hawaiian, #multirace, #other").on("change",{dataset: full_data}, map_refresh);
                         break;
                     case "income":
                         subgroups.html('<fieldset><legend>Select Subgroup(s)</legend> <label for="Total_Inc25000">Under $25,000</label> <input id="Total_Inc25000" name="Total_Inc25000" type="checkbox"> <label for="Total_Inc50000">$25,000 to $49,999</label> <input id="Total_Inc50000" name="Total_Inc50000" type="checkbox"> <label for="Total_Inc75000">$50,000 to $74,999</label> <input id="Total_Inc75000" name="Total_Inc75000" type="checkbox"> <label for="Total_Inc100000">$75,000 to $99,999</label> <input id="Total_Inc100000" name="Total_Inc100000" type="checkbox"> <label for="Total_Inc999999">$100,000 and over</label> <input id="Total_Inc999999" name="Total_Inc999999" type="checkbox"></fieldset>');
                         $("#subgroups input").checkboxradio();
+                        $("#Total_Inc25000, #Total_Inc50000, #Total_Inc75000, #Total_Inc100000, #Total_Inc999999").on("change",{dataset: full_data}, map_refresh);
                         break;
                     case "age":
                         subgroups.html('<fieldset><legend>Select Subgroup(s)</legend> <label for="Total_Age18">Under 18 years</label> <input id="Total_Age18" name="Total_Age18" type="checkbox"> <label for="Total_Age18-64">18 to 64 years</label> <input id="Total_Age18-64" name="Total_Age18-64" type="checkbox"> <label for="Total_Age65">65 years and older</label> <input id="Total_Age65" name="Total_Age65" type="checkbox"></fieldset>');
                         $("#subgroups input").checkboxradio();
+                        $("#Total_Age18, #Total_Age18-64, #Total_Age65").on("change",{dataset: full_data}, map_refresh);
                         break;
                     default:
                         subgroups.html('<fieldset><legend>Select Subgroup(s)</legend> <label for="white">White</label> <input id="white" name="white" type="checkbox"> <label for="black">Black</label> <input id="black" name="black" type="checkbox"> <label for="asian">Asian</label> <input id="asian" name="asian" type="checkbox"> <label for="hawaiian">Hawaiian</label> <input id="hawaiian" name="hawaiian" type="checkbox"> <label for="multirace">Multirace</label> <input id="multirace" name="multirace" type="checkbox"> <label for="other">Other</label> <input id="other" name="other" type="checkbox"></fieldset>');
                         $("#subgroups input").checkboxradio();
+                        $("#white, #black, #asian, #hawaiian, #multirace, #other").on("change",{dataset: full_data}, map_refresh);
                 }
             }
         });
@@ -210,22 +214,7 @@
         $("#visual-option input").on("click", {dataset: full_data}, trend);
 
         // subgroup radiobox playaround
-        $("#white").on("change",{dataset: full_data}, map_refresh);
-        $("#black").on("change",{dataset: full_data}, map_refresh);
-        $("#asian").on("change",{dataset: full_data}, map_refresh);
-        $("#hawaiian").on("change",{dataset: full_data}, map_refresh);
-        $("#multirace").on("change",{dataset: full_data}, map_refresh);
-        $("#other").on("change",{dataset: full_data}, map_refresh);
-        $("#Total_Age18").on("change",{dataset: full_data}, map_refresh);
-        $("#Total_Age18-64").on("change",{dataset: full_data}, map_refresh);
-        $("#Total_Age65").on("change",{dataset: full_data}, map_refresh);
-        $("#Total_Inc25000").on("change",{dataset: full_data}, map_refresh);
-        $("#Total_Inc50000").on("change",{dataset: full_data}, map_refresh);
-        $("#Total_Inc75000").on("change",{dataset: full_data}, map_refresh);
-        $("#Total_Inc100000").on("change",{dataset: full_data}, map_refresh);
-        $("#Total_Inc999999").on("change",{dataset: full_data}, map_refresh);
-
-
+        $("#white, #black, #asian, #hawaiian, #multirace, #other").on("change",{dataset: full_data}, map_refresh);
 
     });
 </script>
